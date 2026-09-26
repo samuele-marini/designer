@@ -21,8 +21,8 @@
    - i puntatori usano down/move/up con cattura, e su touch è il sito a
      passare il movimento: così il dito può anche scorrere e navigare;
    - il loop di rendering si ferma quando non c'è niente da mostrare;
-   - su telefono il vetro rinuncia alla rifrazione: costa un secondo
-     rendering completo della scena a ogni fotogramma;
+   - il telefono ha la stessa resa del desktop: stesso vetro con
+     rifrazione, antialiasing e nitidezza;
    - c'è una via d'uscita se manca WebGL o se il modello non si carica.
    ========================================================================== */
 
@@ -97,7 +97,7 @@ const OFFSET_EASE = 0.22;
      tarate fra loro e con il rig di luci.
    - `transmission` a 1 attiva la rifrazione vera. Costa un rendering
      completo della scena in più a ogni fotogramma, ed è l'unica voce di
-     questo blocco che pesa davvero. Su telefono è già disattivata.
+     questo blocco che pesa davvero. Vale anche su telefono.
    ========================================================================== */
 export const SETTINGS = {
   /* --- COME È FATTO IL VETRO -------------------------------------------
@@ -145,11 +145,6 @@ export const SETTINGS = {
     clearcoat: 0.0,
     clearcoatRoughness: 0.03,
   },
-
-  /* Su telefono la rifrazione è sempre spenta — costa troppo — e il vetro è
-     una semplice trasparenza. Con glassMode 'layered' telefono e desktop
-     usano finalmente lo stesso materiale. */
-  mobileOpacity: 0.42,
 
   /* --- BORDI (lo strato Fresnel) ----------------------------------------
      QUESTE DUE VOCI GOVERNANO IL GRIGIO DELLE FACCE LARGHE.
@@ -214,7 +209,8 @@ export const SETTINGS = {
   render: {
     exposure: 1.0, // luminosità generale. Sotto 1 scurisce TUTTO, luce inclusa
     pixelRatioDesktop: 2, // nitidezza. Scendere qui è il modo più efficace
-    pixelRatioMobile: 1.25, //   di alleggerire, se mai servisse
+    pixelRatioMobile: 2, //   di alleggerire, se mai servisse. Uguale al
+    //                       desktop: il telefono deve avere la stessa resa
     // Risoluzione dell'immagine che il vetro rifrange, rispetto allo
     // schermo. 1 = piena. A 0.5 si disegnano quattro volte meno pixel ad
     // ogni fotogramma (con nitidezza 2 sono circa 4 milioni in meno), e dietro
@@ -247,8 +243,9 @@ export function createScene(container, { loadingEl, errorEl } = {}) {
   let lastY = null;
 
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  /* Su schermi touch il vetro con rifrazione non regge: three.js renderizza
-     l'intera scena una seconda volta, ogni fotogramma, per poterla rifrangere. */
+  /* Schermi touch. Hanno la STESSA resa del desktop — stesso vetro con
+     rifrazione, antialiasing, nitidezza 2 — e l'unica differenza è che non
+     abbassano la nitidezza da soli quando i fotogrammi rallentano. */
   const lowTier = window.matchMedia('(pointer: coarse)').matches;
   /* L'inquadratura segue il breakpoint del CSS, non il tipo di puntatore:
      un portatile touch deve restare desktop. */
@@ -308,7 +305,7 @@ export function createScene(container, { loadingEl, errorEl } = {}) {
     camera = new THREE.PerspectiveCamera(FOV, 1, 1, 50);
 
     renderer = new THREE.WebGLRenderer({
-      antialias: !lowTier,
+      antialias: true,
       alpha: false,
       powerPreference: 'high-performance',
     });
@@ -421,15 +418,13 @@ export function createScene(container, { loadingEl, errorEl } = {}) {
     scene.add(magenta);
   }
 
-  /* Il vetro rinuncia alla rifrazione? Sul telefono sempre: costa un
-     rendering completo della scena in più a ogni fotogramma. */
+  /* Il vetro rinuncia alla rifrazione? Solo se lo sceglie glassMode: il
+     telefono usa lo stesso materiale del desktop. */
   function layeredGlass() {
-    return SETTINGS.glassMode === 'layered' || lowTier;
+    return SETTINGS.glassMode === 'layered';
   }
 
-  /* SCELTA ESPLICITA di vedere le lastre l'una attraverso l'altra. Diversa da
-     layeredGlass(): sul telefono si rinuncia alla rifrazione per costo, ma il
-     vetro continua a nascondere quello che ha dietro, come sempre. */
+  /* SCELTA ESPLICITA di vedere le lastre l'una attraverso l'altra. */
   function seeThroughGlass() {
     return SETTINGS.glassMode === 'layered';
   }
@@ -443,14 +438,12 @@ export function createScene(container, { loadingEl, errorEl } = {}) {
         roughness: L.roughness,
         envMapIntensity: L.envMapIntensity,
         ior: L.ior,
-        side: L.doubleSided && !lowTier ? THREE.DoubleSide : THREE.FrontSide,
+        side: L.doubleSided ? THREE.DoubleSide : THREE.FrontSide,
         transparent: true,
-        opacity: lowTier ? SETTINGS.mobileOpacity : L.opacity,
+        opacity: L.opacity,
         /* SENZA QUESTO NON SI VEDONO LE LASTRE DIETRO.
            Scrivendo la profondità, la prima lastra disegnata respinge tutte
-           quelle che le stanno dietro e la sovrapposizione sparisce.
-           Sul telefono resta attivo: lì si rinuncia alla rifrazione per
-           costo, non per cambiare il modo in cui le lastre si coprono. */
+           quelle che le stanno dietro e la sovrapposizione sparisce. */
         depthWrite: !seeThroughGlass(),
       });
     }
@@ -896,7 +889,8 @@ export function createScene(container, { loadingEl, errorEl } = {}) {
   function watchFrameRate() {
     const previous = lastFrameAt;
     lastFrameAt = performance.now();
-    if (!previous || qualityScale <= QUALITY_FLOOR) return;
+    // Sul telefono la nitidezza resta piena: la resa deve essere quella desktop.
+    if (lowTier || !previous || qualityScale <= QUALITY_FLOOR) return;
 
     if (lastFrameAt - previous > QUALITY_SLOW_MS) slowFrames++;
     else slowFrames = Math.max(0, slowFrames - 1);
