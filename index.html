@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#000000" />
+    <title>Samuele Marini — Designer</title>
+    <meta
+      name="description"
+      content="Portfolio di Samuele Marini, designer. Progettazione di prodotto e comunicazione, con un background tecnico nella progettazione meccanica e nell'arredo."
+    />
+
+    <!-- Il segno nella linguetta del browser: SM bianco su nero, in Inter
+         come tutto il resto. È un PNG da 512 perché serve anche come icona
+         quando si salva il sito nella schermata di un telefono. -->
+    <link rel="icon" type="image/png" href="./favicon.png" />
+    <link rel="apple-touch-icon" href="./favicon.png" />
+
+    <link
+      rel="preload"
+      href="./assets/fonts/inter-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="./assets/fonts/inter-italic-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+
+    <link rel="stylesheet" href="./css/base.css" />
+    <link rel="stylesheet" href="./css/layout.css" />
+    <link rel="stylesheet" href="./css/sections.css" />
+    <link rel="stylesheet" href="./css/project.css" />
+  </head>
+
+  <body class="panel-1">
+    <!-- =====================================================================
+         MODELLO 3D
+         Sta dietro a tutto, per tutta la pagina. È decorativo: gli screen
+         reader lo saltano.
+         ================================================================== -->
+    <div id="stage" aria-hidden="true">
+      <div id="webgl"></div>
+      <p id="scene-loading">Caricamento 3D<span class="dots"></span></p>
+      <p id="scene-error" hidden></p>
+    </div>
+
+    <!-- =====================================================================
+         MENU
+         Sempre le stesse quattro voci, nello stesso ordine. Su desktop è
+         sempre visibile; su mobile compare solo nel pannello del menu.
+         ================================================================== -->
+    <nav id="menu" class="is-hero" aria-label="Sezioni del sito">
+      <a class="menu__link" href="#home">Home</a>
+      <a class="menu__link" href="#portfolio">Portfolio</a>
+      <a class="menu__link" href="#cv">CV</a>
+      <a class="menu__link" href="#contatti">Contatti</a>
+    </nav>
+
+    <main id="sections">
+      <!-- ===================================================================
+           HOME
+           =============================================================== -->
+      <section id="home" class="section section--fixed" aria-label="Home">
+        <div class="section__pane home__pane">
+          <h1 class="home__name">Samuele Marini</h1>
+
+          <div class="home__portrait">
+            <!-- È l'unica immagine che si vede al primo istante: il browser
+                 deve prenderla per prima, prima della galleria. -->
+            <img
+              src="./webp/samuele-marini.webp"
+              alt="Samuele Marini"
+              width="800"
+              height="800"
+              decoding="async"
+              fetchpriority="high"
+            />
+          </div>
+
+          <div class="home__intro">
+            <p class="body-text">
+              Dopo sei anni di esperienza nella progettazione meccanica e
+              dell'arredo, ho scelto di intraprendere gli studi in Design.
+            </p>
+            <p class="body-text">
+              L'esperienza sul campo e la formazione universitaria si
+              completano, dando forma a un approccio progettuale concreto,
+              consapevole e orientato alla qualità.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           PORTFOLIO
+           La griglia è costruita da js/gallery.js a partire da
+           js/data/projects.js.
+           =============================================================== -->
+      <section id="portfolio" class="section section--scroll" aria-label="Portfolio">
+        <div class="section__pane">
+          <ul id="gallery" class="gallery"></ul>
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           CV
+           Il contenuto è costruito da js/cv.js a partire da
+           js/data/cv-data.js (fonte: il PDF nella cartella references).
+           =============================================================== -->
+      <section id="cv" class="section section--scroll" aria-label="Curriculum vitae">
+        <div class="section__pane">
+          <div id="cv-content"></div>
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           CONTATTI
+           =============================================================== -->
+      <section id="contatti" class="section section--fixed" aria-label="Contatti">
+        <div class="section__pane contact__pane">
+          <ul class="contact__list">
+            <li class="contact__heading">Let's work together!</li>
+            <li>Samuele Marini</li>
+            <li>
+              <a class="underlined" href="mailto:samuelemarini98@gmail.com"
+                >samuelemarini98@gmail.com</a
+              >
+            </li>
+            <!-- Su telefono apre il tastierino col numero già inserito; su
+                 desktop apre l'applicazione di chiamata configurata, se c'è.
+                 Sottolineato come l'email: sono entrambi link attivi. -->
+            <li><a class="underlined" href="tel:+393387483955">338 748 3955</a></li>
+            <li>Fossombrone, Marche, Italy</li>
+          </ul>
+
+          <div class="contact__social">
+            <!-- Gli indirizzi sono scritti nudi, senza la coda che le app
+                 aggiungono quando si usa "condividi" (utm_source, utm_medium
+                 e compagnia): quella serve a loro per sapere da dove arriva
+                 il clic, a noi no, e sporca il link. -->
+            <a
+              href="https://www.instagram.com/samuele.pdf"
+              aria-label="Instagram"
+              target="_blank"
+              rel="noopener"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M12 2.16c3.2 0 3.58.01 4.85.07 1.17.05 1.8.25 2.23.41.56.22.96.48 1.38.9.42.42.68.82.9 1.38.16.42.36 1.06.41 2.23.06 1.27.07 1.65.07 4.85s-.01 3.58-.07 4.85c-.05 1.17-.25 1.8-.41 2.23-.22.56-.48.96-.9 1.38-.42.42-.82.68-1.38.9-.42.16-1.06.36-2.23.41-1.27.06-1.65.07-4.85.07s-3.58-.01-4.85-.07c-1.17-.05-1.8-.25-2.23-.41a3.8 3.8 0 0 1-1.38-.9 3.8 3.8 0 0 1-.9-1.38c-.16-.42-.36-1.06-.41-2.23C2.17 15.58 2.16 15.2 2.16 12s.01-3.58.07-4.85c.05-1.17.25-1.8.41-2.23.22-.56.48-.96.9-1.38.42-.42.82-.68 1.38-.9.42-.16 1.06-.36 2.23-.41C8.42 2.17 8.8 2.16 12 2.16M12 0C8.74 0 8.33.01 7.05.07 5.78.13 4.9.33 4.14.63c-.79.3-1.46.72-2.13 1.38A5.9 5.9 0 0 0 .63 4.14c-.3.76-.5 1.64-.56 2.91C.01 8.33 0 8.74 0 12s.01 3.67.07 4.95c.06 1.27.26 2.15.56 2.91.3.79.72 1.46 1.38 2.13a5.9 5.9 0 0 0 2.13 1.38c.76.3 1.64.5 2.91.56C8.33 23.99 8.74 24 12 24s3.67-.01 4.95-.07c1.27-.06 2.15-.26 2.91-.56a5.9 5.9 0 0 0 2.13-1.38 5.9 5.9 0 0 0 1.38-2.13c.3-.76.5-1.64.56-2.91.06-1.28.07-1.69.07-4.95s-.01-3.67-.07-4.95c-.06-1.27-.26-2.15-.56-2.91a5.9 5.9 0 0 0-1.38-2.13A5.9 5.9 0 0 0 19.86.63c-.76-.3-1.64-.5-2.91-.56C15.67.01 15.26 0 12 0z"
+                />
+                <path
+                  d="M12 5.84A6.16 6.16 0 1 0 18.16 12 6.16 6.16 0 0 0 12 5.84zm0 10.16A4 4 0 1 1 16 12a4 4 0 0 1-4 4z"
+                />
+                <circle cx="18.41" cy="5.59" r="1.44" />
+              </svg>
+            </a>
+            <!-- INSERISCI QUI I TUOI LINK: sostituisci il # con l'indirizzo. -->
+            <a
+              href="https://www.linkedin.com/in/samuele-marini-28bb66306"
+              aria-label="LinkedIn"
+              target="_blank"
+              rel="noopener"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05a3.74 3.74 0 0 1 3.37-1.85c3.6 0 4.27 2.37 4.27 5.46zM5.34 7.43a2.06 2.06 0 1 1 2.06-2.06 2.07 2.07 0 0 1-2.06 2.06zM7.12 20.45H3.56V9h3.56zM22.22 0H1.77A1.75 1.75 0 0 0 0 1.73v20.54A1.75 1.75 0 0 0 1.77 24h20.45A1.76 1.76 0 0 0 24 22.27V1.73A1.76 1.76 0 0 0 22.22 0z"
+                />
+              </svg>
+            </a>
+          </div>
+
+          <form id="contact-form" class="contact__form" novalidate>
+            <label class="visually-hidden" for="field-nome">Nome</label>
+            <input
+              class="contact__field"
+              id="field-nome"
+              name="nome"
+              type="text"
+              placeholder="Nome"
+              autocomplete="name"
+              required
+            />
+
+            <label class="visually-hidden" for="field-email">E-mail</label>
+            <input
+              class="contact__field"
+              id="field-email"
+              name="email"
+              type="email"
+              placeholder="E-mail"
+              autocomplete="email"
+              required
+            />
+
+            <label class="visually-hidden" for="field-messaggio">Messaggio</label>
+            <textarea
+              class="contact__field contact__field--message"
+              id="field-messaggio"
+              name="messaggio"
+              placeholder="Messaggio"
+              required
+            ></textarea>
+
+            <!-- Trappola anti-spam: invisibile, la compilano solo i robot. -->
+            <input
+              class="visually-hidden"
+              type="text"
+              name="_gotcha"
+              tabindex="-1"
+              autocomplete="off"
+              aria-hidden="true"
+            />
+
+            <button class="contact__send" type="submit">Send</button>
+            <p id="contact-status" class="contact__status" role="status" aria-live="polite"></p>
+          </form>
+        </div>
+      </section>
+    </main>
+
+    <!-- =====================================================================
+         PAGINA PROGETTO
+         Vuota finché non si apre un progetto: la riempie js/project.js con i
+         dati di js/data/project-pages.js. Le immagini dei progetti non si
+         scaricano all'avvio del sito, ma solo quando si apre il progetto.
+         ================================================================== -->
+    <section id="project" class="project-view" aria-label="Progetto"></section>
+
+    <!-- =====================================================================
+         TRIANGOLO (solo mobile)
+         Outline di tre linee. Punta a destra per entrare, a sinistra per
+         tornare indietro.
+         ================================================================== -->
+    <button id="panel-toggle" type="button" data-direction="forward" aria-label="Entra nella sezione">
+      <svg viewBox="0 0 29 34" aria-hidden="true">
+        <path
+          d="M 2 2 L 26.5 17 L 2 32 Z"
+          fill="none"
+          stroke="#ffffff"
+          stroke-width="2"
+          stroke-linejoin="round"
+        />
+      </svg>
+    </button>
+
+    <noscript>
+      <p style="padding: 2rem; color: #fff">
+        Questo sito ha bisogno di JavaScript per mostrare il portfolio e il
+        curriculum. Puoi scrivermi a
+        <a style="color: #fff" href="mailto:samuelemarini98@gmail.com"
+          >samuelemarini98@gmail.com</a
+        >.
+      </p>
+    </noscript>
+
+    <script type="module" src="./js/main.js"></script>
+  </body>
+</html>

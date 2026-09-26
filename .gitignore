@@ -1,0 +1,15 @@
+# Cosa NON va su GitHub.
+#
+# references/ sono i materiali di partenza — il PDF del portfolio e le tavole
+# Figma: 32 MB che il sito non apre mai. Restano sul tuo computer. Se un
+# giorno li vuoi anche nel repository, basta cancellare la riga.
+references/
+
+# Impostazioni locali dell'editor.
+.claude/
+.vscode/
+
+# Scarti di sistema.
+Thumbs.db
+desktop.ini
+.DS_Store

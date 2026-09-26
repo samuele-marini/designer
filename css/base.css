@@ -1,0 +1,324 @@
+/* ==========================================================================
+   BASE — font, token, reset, tipografia
+   --------------------------------------------------------------------------
+   COME LEGGERE LE MISURE
+   Tutte le misure sono scritte con i numeri delle tavole Figma.
+   `--px` vale 1px quando la finestra ha la larghezza della tavola
+   (1280 su desktop, 375 su mobile) e scala dolcemente altrove.
+
+       calc(42 * var(--px))   =   "42 pixel Figma"
+
+   Per cambiare una misura basta cambiare il numero: resta leggibile.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. FONT — Inter, servito dal progetto (nessuna CDN)
+   I file latini di Inter sono variabili: un solo file copre i pesi 100..900,
+   quindi bastano 4 woff2 (tondo/corsivo x latin/latin-ext).
+   -------------------------------------------------------------------------- */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('../assets/fonts/inter-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('../assets/fonts/inter-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('../assets/fonts/inter-italic-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('../assets/fonts/inter-italic-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* --------------------------------------------------------------------------
+   2. TOKEN
+   -------------------------------------------------------------------------- */
+:root {
+  /* Scala. 1px Figma della tavola desktop (1280 di larghezza). */
+  --px: clamp(0.92px, 100vw / 1280, 1.12px);
+
+  /* Colore — misurato dalle tavole. Il nero è puro, il bianco è puro. */
+  --black: #000000;
+  --white: #ffffff;
+  --field-bg: #ffffff;
+  --field-text: #111111;
+  --field-placeholder: #a3a3a3;
+  --accent: #4dd2ff; /* il ciano emesso dal modello: solo per focus/hover */
+  --danger: #ff9c9c;
+  --placeholder-box: #e01b1b; /* segnaposto immagini, temporaneo */
+
+  /* Tipografia — corpi delle tavole desktop */
+  --font: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --fw-light: 200; /* Inter Extra Light — menu e titoli */
+  --fw-regular: 400; /* testo corrente */
+  --fw-medium: 500; /* solo SEND: più marcato del testo, non un vero bold */
+
+  --size-nav-hero: calc(42 * var(--px));
+  --size-nav-compact: calc(25 * var(--px));
+  --size-display: calc(40 * var(--px));
+  --size-body: calc(13 * var(--px));
+  --size-caption: calc(11 * var(--px));
+
+  --lh-nav-hero: calc(77 * var(--px));
+  --lh-nav-compact: calc(40 * var(--px));
+  --lh-body: calc(17 * var(--px));
+
+  /* Margini della griglia — vedi css/layout.css per il ragionamento.
+     Il destro era 80, misurato sulle tavole. Portato a 60 perché il margine
+     di riferimento è quello sinistro, 52: con 80 la composizione si leggeva
+     spostata, e i 20 recuperati sono esattamente lo spazio che al Portfolio
+     mancava per non finire sotto al modello sui portatili. */
+  --margin-left: calc(52 * var(--px));
+  --margin-right: calc(60 * var(--px));
+  --margin-y: calc(52 * var(--px));
+
+  /* Movimento.
+     --dur-section è anche il tempo per cui la navigazione ignora nuovi gesti:
+     js/navigation.js la legge da qui, così i due non possono divergere.
+     Era 620ms con un blocco di 720: il blocco durava PIÙ dell'animazione che
+     doveva proteggere, e si sentiva come attrito. */
+  --dur-micro: 120ms;
+  --dur-section: 380ms;
+  /* Quanto dura la scheda che entra, aprendo o chiudendo un progetto:
+     un filo più lunga di una transizione di sezione, perché è un movimento
+     nello spazio e non una sostituzione. */
+  --dur-page: 460ms;
+
+  /* Curve che PARTONO SUBITO e si posano piano.
+     Prima era cubic-bezier(0.65, 0, ...), che comincia lenta: il pannello si
+     muoveva in ritardo rispetto al modello 3D, che invece parte subito perché
+     è ammorbidito a decadimento esponenziale. Erano due partenze diverse nella
+     stessa transizione, ed è da lì che veniva la sensazione di scollamento. */
+  --ease: cubic-bezier(0.2, 0.7, 0.3, 1);
+  --ease-section: cubic-bezier(0.22, 0.61, 0.36, 1);
+
+  /* Piani */
+  --z-stage: 0;
+  --z-sections: 1;
+  --z-menu: 2;
+  --z-toggle: 3;
+
+  color-scheme: dark;
+}
+
+@media (max-width: 899px) {
+  :root {
+    /* Su mobile la tavola di riferimento è larga 375. */
+    --px: clamp(0.9px, 100vw / 375, 1.25px);
+
+    --size-nav-hero: calc(24 * var(--px));
+    --size-nav-compact: calc(24 * var(--px));
+    --size-display: calc(30 * var(--px));
+    --size-body: calc(13 * var(--px));
+    --size-caption: calc(11 * var(--px));
+
+    --lh-nav-hero: calc(39 * var(--px));
+    --lh-nav-compact: calc(39 * var(--px));
+    --lh-body: calc(16 * var(--px));
+
+    --margin-left: calc(30 * var(--px));
+    --margin-right: calc(35 * var(--px));
+    --margin-y: calc(30 * var(--px));
+  }
+}
+
+/* --------------------------------------------------------------------------
+   3. RESET
+   -------------------------------------------------------------------------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  background: var(--black);
+  /* Le quattro sezioni stanno una sotto l'altra e SCORRE IL DOCUMENTO.
+     È lo scorrimento del browser: funziona con rotella, trackpad, frecce,
+     barra spaziatrice e dito, e funziona da qualunque punto dello schermo —
+     anche sopra al modello 3D, che sta su un livello fisso e non riceve
+     eventi. Nessun motore di scorrimento scritto a mano.
+
+     `overflow-x: clip` taglia quello che esce di lato (su telefono il
+     contenuto esce a destra quando si apre il menu) senza creare un
+     contenitore scorrevole: l'asse verticale resta quello del documento. */
+  overflow-x: clip;
+}
+
+/* La barra di scorrimento non si vede, come nei pannelli interni di prima:
+   il fondo nero e il bordo pulito sono parte della composizione. */
+html {
+  scrollbar-width: none;
+  scroll-behavior: smooth;
+  /* UNO SWIPE ORIZZONTALE È DEL SITO, NON DEL BROWSER.
+     Senza questo, sul telefono il gesto che riporta al menu — o quello che
+     chiude un progetto — faceva scattare il "torna indietro" del browser e
+     la pagina si ricaricava. */
+  overscroll-behavior-x: none;
+}
+
+html::-webkit-scrollbar {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* Con un progetto aperto la pagina sotto non scorre: il dito e la rotella
+   sono tutti della pagina progetto. */
+html.project-open {
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--font);
+  font-weight: var(--fw-regular);
+  font-size: var(--size-body);
+  line-height: var(--lh-body);
+  color: var(--white);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+p,
+ul,
+ol,
+figure {
+  margin: 0;
+  padding: 0;
+}
+
+ul,
+ol {
+  list-style: none;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+/* --------------------------------------------------------------------------
+   4. TIPOGRAFIA CONDIVISA
+   -------------------------------------------------------------------------- */
+
+/* Etichetta in maiuscolo: stesso corpo del testo, gerarchia data dal
+   maiuscolo e dallo spazio attorno — non da un salto di dimensione. */
+.label {
+  font-size: var(--size-body);
+  line-height: var(--lh-body);
+  font-weight: var(--fw-regular);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.body-text {
+  font-size: var(--size-body);
+  line-height: var(--lh-body);
+  font-weight: var(--fw-regular);
+}
+
+.caption {
+  font-size: var(--size-caption);
+  line-height: 1.2;
+  font-weight: var(--fw-regular);
+}
+
+/* Sottolineatura semantica: link e stato attivo. Mai decorativa. */
+.underlined {
+  text-decoration: underline;
+  text-decoration-thickness: calc(1.5 * var(--px));
+  text-underline-offset: calc(3 * var(--px));
+}
+
+/* --------------------------------------------------------------------------
+   5. ACCESSIBILITÀ
+   -------------------------------------------------------------------------- */
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: calc(4 * var(--px));
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-micro: 0ms;
+    --dur-section: 0ms;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,646 @@
+/* ==========================================================================
+   PAGINA PROGETTO
+   --------------------------------------------------------------------------
+   Le misure vengono dalle tavole desktop_progetti, desktop_progetti_2 e
+   mobile_progetti, scritte come sempre in pixel Figma (vedi css/base.css).
+
+   DESKTOP  la pagina occupa ESATTAMENTE la colonna della galleria del
+            Portfolio (stessa larghezza, stesso margine destro): si apre nello
+            stesso reticolo, il modello 3D e il menu restano dove sono.
+   MOBILE   la pagina copre tutto lo schermo, su fondo nero, senza modello.
+
+   Il ritmo verticale desktop è costruito sulla gronda delle miniature, 14:
+   immagine -> miniature 14, miniature -> testo 27 (circa due gronde),
+   testo -> informazioni e fondo pagina 43 (circa tre gronde).
+   ========================================================================== */
+
+/* APRIRE UN PROGETTO È SOVRAPPORRE UNA SCHEDA.
+   --------------------------------------------------------------------------
+   Due schede, una sopra l'altra. Quella del progetto arriva da destra e si
+   posa sopra; quella sotto — la galleria — fa un passo indietro: arretra di
+   pochissimo, si rimpicciolisce appena e si spegne. Nient'altro: nessuna
+   rotazione, nessuna prospettiva. La profondità la danno la scala e la
+   dissolvenza, ed è quanto basta perché si legga come un piano sopra
+   all'altro.
+
+   LE MISURE SONO PICCOLE APPOSTA. Il 6% di scala e il 3% di arretramento si
+   vedono, ma non si notano: quello che deve saltare all'occhio è la scheda
+   che entra, non quella che esce. Un valore più grande trasforma un cambio
+   di piano in un effetto.
+
+   Si animano solo `transform` e `opacity`: il movimento non tocca
+   l'impaginazione e non rallenta il caricamento delle immagini. Se
+   un'immagine arriva dopo, compare con la sua dissolvenza dentro una pagina
+   già ferma.
+
+   Su telefono, in più, il modello 3D se ne va con la galleria: scivola a
+   sinistra fino a sparire del tutto, perché lì la scheda del progetto prende
+   tutto lo schermo. Su desktop resta dov'è: la scheda gli si affianca nella
+   colonna della galleria e lui non c'entra. */
+.project-view {
+  position: fixed;
+  inset: 0;
+  /* Sopra le sezioni (stesso livello, ma viene dopo nel documento) e sotto
+     al menu, che su desktop resta usabile anche dentro un progetto. */
+  z-index: var(--z-sections);
+
+  /* DA DOVE ARRIVA LA SCHEDA.
+     Su desktop la pagina è larga quanto la colonna della galleria: basta
+     spostarla della sua larghezza più il margine destro perché sia appena
+     fuori dallo schermo, e il viaggio è corto quanto il movimento che
+     racconta. Su telefono copre tutto, quindi il viaggio è tutto lo schermo
+     (vedi in fondo). */
+  --pv-slide: calc(450 * var(--px) + var(--margin-right));
+
+  visibility: hidden;
+  transform: translateX(var(--pv-slide));
+  pointer-events: none;
+  transition: transform var(--dur-page) var(--ease-section),
+    visibility 0s linear var(--dur-page);
+
+  /* L'INVERSIONE GUARDA SOLO DENTRO QUESTA PAGINA.
+     L'intestazione si inverte su quello che le scorre sotto (`difference`,
+     più sotto). Senza `isolation`, quel "sotto" per il browser è tutto ciò
+     che sta dietro al livello — galleria e modello 3D compresi — e per
+     disegnarlo deve rileggersi lo sfondo a ogni fotogramma: proprio mentre la
+     scheda sta scorrendo, cioè quando serve tutta la fluidità. Isolando, il
+     confronto avviene fra l'intestazione e le immagini del progetto, che è
+     quello che si voleva, e il livello può scorrere per conto suo. */
+  isolation: isolate;
+}
+
+.project-view.is-open {
+  visibility: visible;
+  /* `none` e non `translateX(0)`: a pagina ferma il livello non deve restare
+     un livello trasformato: il browser lo terrebbe su una sua superficie
+     anche solo per scorrere il testo. */
+  transform: none;
+  pointer-events: auto;
+  transition: transform var(--dur-page) var(--ease-section), visibility 0s;
+}
+
+/* La scheda di sotto: il sito che resta indietro. */
+#sections {
+  transform-origin: 50% 50%;
+  transition: transform var(--dur-page) var(--ease-section),
+    opacity var(--dur-page) var(--ease);
+}
+
+body.project-open #sections {
+  transform: translateX(-3%) scale(0.94);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Mentre il dito comanda la chiusura, le pose le scrive js/project.js: le
+   transizioni si spengono, altrimenti inseguirebbero il dito. */
+body.page-dragging #sections,
+body.page-dragging #stage,
+body.page-dragging .project-view {
+  transition: none;
+}
+
+/* Chi ha chiesto meno movimento non lo riceve: la scheda compare e sparisce,
+   senza viaggi. La dissolvenza resta, perché è quella che dice qual è il
+   piano sopra. */
+@media (prefers-reduced-motion: reduce) {
+  .project-view,
+  .project-view.is-open,
+  body.project-open #sections,
+  body.project-open #stage {
+    transform: none;
+  }
+}
+
+/* Lo scorrimento copre tutta la finestra, non solo la colonna: così la
+   rotella scorre il progetto ovunque sia il puntatore. Il modello continua a
+   ricevere il mouse, perché ascolta la finestra e non questo livello. */
+.pv__scroller {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  /* Il dito scorre in verticale (nativo) e pizzica per ingrandire; in
+     orizzontale non c'è niente da scorrere, quindi il browser non deve
+     nemmeno provarci: lo swipe laterale è quello che chiude il progetto. */
+  touch-action: pan-y pinch-zoom;
+}
+
+.pv__scroller::-webkit-scrollbar {
+  display: none;
+}
+
+/* La stessa colonna della galleria: #portfolio --pane-w, margine destro
+   del sito. Se cambia lì, va cambiata anche qui. */
+.pv__column {
+  width: calc(450 * var(--px));
+  margin-left: auto;
+  margin-right: var(--margin-right);
+  padding-bottom: calc(43 * var(--px));
+}
+
+
+/* --------------------------------------------------------------------------
+   INTESTAZIONE — triangolo e titolo, fermi mentre il resto scorre.
+   `difference`, come il triangolo mobile del sito: bianco sul nero, scuro
+   sulle immagini chiare, il colore complementare su quelle intermedie. È
+   il contenuto che passa sotto a decidere, ed è voluto.
+   -------------------------------------------------------------------------- */
+.pv__head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: calc(16 * var(--px));
+  /* Allineata al menu compatto, che sta a 37 dall'alto. */
+  padding-top: calc(37 * var(--px));
+  color: var(--white);
+  mix-blend-mode: difference;
+}
+
+.pv__title {
+  font-size: var(--size-display);
+  font-weight: var(--fw-light);
+  line-height: 1.15;
+  text-align: right;
+}
+
+/* Il bersaglio è 44x44, il segno grafico 17x18. I margini negativi fanno
+   occupare al pulsante, nella riga, solo la larghezza del triangolo: il
+   triangolo sta esattamente sul bordo della colonna e al titolo resta tutto
+   lo spazio (a "Museo Horacio Pagani" serve quasi tutta la colonna).
+   In verticale il triangolo è centrato sulla PRIMA riga del titolo: se un
+   titolo lungo va a capo, il triangolo resta in alto accanto all'inizio. */
+.pv__back {
+  --hit: 44px;
+  --mark: calc(17 * var(--px));
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: var(--hit);
+  height: var(--hit);
+  margin-inline: calc((var(--mark) - var(--hit)) / 2);
+  margin-top: calc(var(--size-display) * 1.15 / 2 - var(--hit) / 2);
+}
+
+.pv__back svg {
+  width: calc(17 * var(--px));
+  height: calc(18 * var(--px));
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+  overflow: visible;
+}
+
+.pv__back svg path {
+  vector-effect: non-scaling-stroke;
+}
+
+/* --------------------------------------------------------------------------
+   IMMAGINE PRINCIPALE
+   -------------------------------------------------------------------------- */
+.pv__stage {
+  margin-top: calc(19 * var(--px));
+}
+
+/* Il telaio ha la proporzione dichiarata in js/project.js (--fr). */
+.pv__frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: var(--fr);
+}
+
+/* Museo Pagani: desktop e mobile affiancati alla stessa altezza.
+   Ognuno cresce in proporzione alla sua forma, quindi con la stessa altezza
+   si dividono la larghezza esattamente come nella tavola (406 + 16 + 60). */
+.pv__stage--pair {
+  display: flex;
+  gap: calc(16 * var(--px));
+}
+
+.pv__stage--pair .pv__frame {
+  flex: var(--fr) 1 0;
+  min-width: 0;
+  width: auto;
+}
+
+/* Il contenuto di un telaio: centrato, adattato senza tagli. Due contenuti
+   possono stare sovrapposti per il tempo della dissolvenza. */
+.pv__visual {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 220ms var(--ease);
+}
+
+.pv__visual.is-entering,
+.pv__visual.is-leaving {
+  opacity: 0;
+}
+
+/* Un riquadro di proporzione --r dentro un telaio di proporzione --fr:
+   largo quanto il telaio se è più orizzontale, altrimenti alto quanto il
+   telaio. È il `contain` dei riquadri, senza JavaScript. */
+.pv__box {
+  position: relative;
+  width: min(100%, calc(100% * var(--r) / var(--fr)));
+  aspect-ratio: var(--r);
+  overflow: hidden;
+}
+
+.pv__box img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Le schermate dei siti (Museo Pagani): una pagina lunga riempie il
+   riquadro tenendone la parte alta; una schermata corta sta intera, in alto.
+   Quale delle due lo decide js/project.js appena l'immagine è caricata. */
+.pv__box img.is-cover-top {
+  object-fit: cover;
+  object-position: 50% 0;
+}
+
+.pv__box img.is-contain-top {
+  object-position: 50% 0;
+}
+
+/* --------------------------------------------------------------------------
+   VIDEO — quattro controlli e basta
+   --------------------------------------------------------------------------
+   Play/pausa al centro dell'immagine (e si ottiene anche toccando il video),
+   volume a sinistra, avanzamento, schermo intero. Niente durata scritta,
+   niente scarica, niente velocità di riproduzione.
+   I segni sono linee bianche in `difference`, come il triangolo del sito:
+   restano leggibili sul nero e sulle parti chiare del film.
+   -------------------------------------------------------------------------- */
+.pv__player {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* Il video sta intero nel suo riquadro, come le immagini; il poster pure. */
+.pv__player video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: var(--black);
+  cursor: pointer;
+}
+
+.pv__player button,
+.pv__bar {
+  color: var(--white);
+  mix-blend-mode: difference;
+}
+
+.pv__player svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+}
+
+/* Mentre il film va, dopo due secondi di quiete tutti i controlli si
+   ritirano: restano solo le immagini. Tornano al primo movimento del
+   puntatore, al primo tocco o col fuoco da tastiera (vedi js/project.js). */
+.pv__player.is-idle .pv__play,
+.pv__player.is-idle .pv__bar {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.pv__play {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: grid;
+  place-items: center;
+  width: calc(56 * var(--px));
+  height: calc(56 * var(--px));
+  margin: calc(-28 * var(--px)) 0 0 calc(-28 * var(--px));
+  transition: opacity 260ms var(--ease);
+}
+
+.pv__play svg {
+  width: calc(32 * var(--px));
+  height: calc(32 * var(--px));
+}
+
+/* Due righe: i pulsanti sopra, l'avanzamento sotto per conto suo. */
+.pv__bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: calc(4 * var(--px));
+  padding: calc(8 * var(--px)) calc(11 * var(--px)) calc(9 * var(--px));
+  transition: opacity 260ms var(--ease);
+}
+
+.pv__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(9 * var(--px));
+}
+
+/* Il cursore del volume è chiuso: non occupa spazio finché non lo si apre. */
+.pv__volume-group {
+  display: flex;
+  align-items: center;
+  gap: calc(8 * var(--px));
+}
+
+.pv__volume {
+  width: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: width var(--dur-micro) var(--ease), opacity var(--dur-micro) var(--ease);
+}
+
+.pv__volume-group.is-open .pv__volume {
+  width: calc(64 * var(--px));
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.pv__bar button {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: calc(20 * var(--px));
+  height: calc(20 * var(--px));
+}
+
+.pv__bar svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Due cursori, disegnati uguali: una linea e un punto. */
+.pv__bar input[type='range'] {
+  appearance: none;
+  -webkit-appearance: none;
+  height: calc(12 * var(--px));
+  background: none;
+  cursor: pointer;
+}
+
+.pv__seek {
+  width: 100%;
+}
+
+/* Le linee dei cursori sono piene come i segni dei pulsanti: così anche loro
+   si invertono sul fondo del film invece di restare grigie. */
+.pv__bar input[type='range']::-webkit-slider-runnable-track {
+  height: 1px;
+  background: currentColor;
+}
+
+.pv__bar input[type='range']::-moz-range-track {
+  height: 1px;
+  background: currentColor;
+}
+
+.pv__bar input[type='range']::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: calc(7 * var(--px));
+  height: calc(7 * var(--px));
+  margin-top: calc(-3 * var(--px));
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.pv__bar input[type='range']::-moz-range-thumb {
+  width: calc(7 * var(--px));
+  height: calc(7 * var(--px));
+  border: 0;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.pv__box--placeholder {
+  background: var(--placeholder-box);
+}
+
+/* --------------------------------------------------------------------------
+   MINIATURE — celle larghe 72, gronda 14, come nella tavola.
+   Ogni immagine sta intera e centrata nella sua cella: il principio è lo
+   stesso della galleria del Portfolio, immagini diverse centrate sui nodi
+   di un reticolo regolare. Le celle sono quadrate; per il Museo Pagani
+   hanno la forma delle sue schermate (--cell, da js/project.js).
+   -------------------------------------------------------------------------- */
+.pv__thumbs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, calc(72 * var(--px)));
+  gap: calc(14 * var(--px));
+  margin-top: calc(14 * var(--px));
+}
+
+.pv__thumbs:empty {
+  display: none;
+}
+
+.pv__thumb {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: var(--cell, 1);
+  transition: opacity var(--dur-micro) var(--ease);
+}
+
+@media (hover: hover) {
+  .pv__thumb:hover {
+    opacity: 0.72;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   TESTO
+   -------------------------------------------------------------------------- */
+.pv__text {
+  margin-top: calc(27 * var(--px));
+  font-size: calc(12 * var(--px));
+  line-height: calc(15 * var(--px));
+}
+
+/* Un progetto senza descrizione (Abitacolo): niente spazio vuoto, le
+   informazioni seguono direttamente le immagini. */
+.pv__text:empty {
+  display: none;
+}
+
+/* Un paragrafo dall'altro: esattamente una riga vuota. */
+.pv__text p + p {
+  margin-top: calc(15 * var(--px));
+}
+
+/* --------------------------------------------------------------------------
+   INFORMAZIONI — tre colonne allineate in basso.
+   Le etichette sono in maiuscolo; i valori grigi, come le date del CV.
+   Le proporzioni delle colonne tengono conto del maiuscolo: sulla tavola le
+   etichette della terza colonna erano in minuscolo e ci stavano in 114, in
+   maiuscolo "CARATTERISTICHE TECNICHE" ne chiede 145. La prima colonna tiene
+   "DESIGN E MULTIMEDIA" (111): il laboratorio va su due righe, come sulla
+   tavola. Corpo 10 su 12, misurato sulle tavole.
+   -------------------------------------------------------------------------- */
+.pv__info {
+  display: grid;
+  grid-template-columns: 30fr 34fr 36fr;
+  column-gap: calc(12 * var(--px));
+  align-items: end;
+  margin-top: calc(43 * var(--px));
+  font-size: calc(10 * var(--px));
+  line-height: calc(12 * var(--px));
+}
+
+.pv__info:empty {
+  display: none;
+}
+
+.pv__info-lab,
+.pv__info-col dt {
+  text-transform: uppercase;
+  color: var(--white);
+}
+
+.pv__info-col {
+  margin: 0;
+}
+
+/* Gli a capo scritti nei dati (\n) restano a capo: servono agli elenchi
+   tecnici, una voce per riga come nel PDF del portfolio. */
+.pv__info-col dd {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.62);
+  white-space: pre-line;
+}
+
+/* Terza colonna: una riga vuota fra un gruppo e l'altro. La seconda sulla
+   tavola desktop è compatta, senza stacchi. */
+.pv__info-col--technical .pv__info-item + .pv__info-item {
+  margin-top: calc(12 * var(--px));
+}
+
+/* ==========================================================================
+   MOBILE — tavola mobile_progetti, 375 di larghezza
+   ========================================================================== */
+@media (max-width: 899px) {
+  /* Tutto lo schermo, fondo nero, sopra il triangolo del sito e il menu.
+     Il modo di entrare è lo stesso del desktop (vedi in cima), ma qui la
+     scheda copre tutto: il viaggio è tutta la larghezza dello schermo. */
+  .project-view {
+    --pv-slide: 100%;
+    z-index: 5;
+    background: var(--black);
+  }
+
+  /* Qui il modello se ne va davvero: scivola a sinistra insieme alla galleria
+     — sempre da destra verso sinistra, come la scheda che entra — e sparisce
+     del tutto. Il 45% lo porta fuori dallo schermo anche nella rotazione in
+     cui sporge di più: quando la pagina del progetto è aperta, dietro non
+     c'è rimasto niente. */
+  #stage {
+    transition: transform var(--dur-page) var(--ease-section),
+      opacity var(--dur-page) var(--ease);
+  }
+
+  body.project-open #stage {
+    transform: translateX(-45%);
+    opacity: 0;
+  }
+
+  .pv__column {
+    width: auto;
+    margin: 0;
+    padding: 0 calc(22 * var(--px)) calc(50 * var(--px));
+  }
+
+  /* Sulla tavola l'intestazione sporge di 5 per lato rispetto alle immagini
+     (triangolo a 17, titolo fino a 357): è quello che fa stare
+     "Museo Horacio Pagani" su una riga a 375 di larghezza. */
+  .pv__head {
+    margin-inline: calc(-5 * var(--px));
+    padding-top: calc(24 * var(--px));
+    gap: calc(14 * var(--px));
+  }
+
+  .pv__back {
+    --mark: calc(13 * var(--px));
+  }
+
+  .pv__back svg {
+    width: calc(13 * var(--px));
+    height: calc(14 * var(--px));
+  }
+
+  .pv__stage {
+    margin-top: calc(17 * var(--px));
+  }
+
+  /* Col dito i bersagli vanno più larghi. */
+  .pv__bar button {
+    width: calc(26 * var(--px));
+    height: calc(26 * var(--px));
+  }
+
+  .pv__stage--pair {
+    gap: calc(6 * var(--px));
+  }
+
+  .pv__thumbs {
+    margin-top: calc(7 * var(--px));
+  }
+
+  .pv__text {
+    margin-top: calc(25 * var(--px));
+    font-size: calc(14 * var(--px));
+    line-height: calc(17 * var(--px));
+  }
+
+  .pv__text p + p {
+    margin-top: calc(17 * var(--px));
+  }
+
+  /* Due colonne strette ai due bordi, come sulla tavola: il laboratorio a
+     sinistra, tutto il resto a destra e allineato a destra, persone sopra e
+     dati tecnici sotto. 150 è il minimo per "CARATTERISTICHE TECNICHE". */
+  .pv__info {
+    grid-template-columns: calc(120 * var(--px)) calc(150 * var(--px));
+    justify-content: space-between;
+    column-gap: calc(20 * var(--px));
+    align-items: start;
+    margin-top: calc(110 * var(--px));
+  }
+
+  .pv__info-lab {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+  }
+
+  .pv__info-col {
+    grid-column: 2;
+    text-align: right;
+  }
+
+  .pv__info-col--technical {
+    margin-top: calc(36 * var(--px));
+  }
+
+  .pv__info-col .pv__info-item + .pv__info-item {
+    margin-top: calc(12 * var(--px));
+  }
+}

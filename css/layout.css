@@ -1,0 +1,447 @@
+/* ==========================================================================
+   LAYOUT — impianto comune: stage 3D, menu, sezioni, triangolo
+   --------------------------------------------------------------------------
+   LA GRIGLIA (desktop, misurata sulle tavole a 1280)
+
+   ┌──────────┬───────────────────────┬──────────────────┐
+   │  menu    │    modello 3D         │   contenuto      │
+   │  x = 52  │  (tagliato sopra      │   ancorato a     │
+   │          │   e sotto)            │   destra, 80     │
+   └──────────┴───────────────────────┴──────────────────┘
+
+   Margine sinistro 52 su tutte e quattro le tavole: è l'unica misura
+   davvero costante del progetto, quindi è il perno del sistema.
+
+   Margine destro: 75-80 su Portfolio, CV e Contatti; 58 sulla Home.
+   Normalizzato a 80. Con questo valore le colonne cadono dove cadono in
+   Figma quasi al pixel: CV a 783 (Figma 783), textarea Contatti a 925
+   (Figma 926), griglia Portfolio a 750 (Figma 756).
+
+   Il modello 3D NON è centrato nella viewport: è centrato nello spazio
+   fra il bordo destro del menu e il bordo sinistro del contenuto.
+   Verificato sulla Home: (204 + 942) / 2 = 573, centro reale 574,5.
+   Il calcolo lo fa js/navigation.js misurando il DOM reale.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   0. --shift-1 DICHIARATA
+   La posizione orizzontale del pannello 1 serve anche a JavaScript: è la
+   corsa del trascinamento col dito su CV e Contatti. Dichiararla con
+   @property la rende una LUNGHEZZA e non una stringa, così getComputedStyle
+   la restituisce già risolta in pixel invece che come `calc(146 * var(--px))`.
+   -------------------------------------------------------------------------- */
+@property --shift-1 {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
+}
+
+/* --------------------------------------------------------------------------
+   1. STAGE 3D — sta dietro a tutto, non riceve mai eventi
+   -------------------------------------------------------------------------- */
+#stage {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-stage);
+  background: var(--black);
+  pointer-events: none;
+}
+
+#webgl {
+  position: absolute;
+  inset: 0;
+}
+
+#webgl canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+#scene-loading,
+#scene-error {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: var(--size-caption);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.78);
+  text-align: center;
+  transition: opacity var(--dur-micro) var(--ease);
+}
+
+#scene-loading.is-hidden {
+  opacity: 0;
+}
+
+#scene-error {
+  max-width: 70vw;
+  color: var(--danger);
+  letter-spacing: 0.04em;
+  line-height: 1.6;
+}
+
+.dots::after {
+  content: '';
+  display: inline-block;
+  width: 1.2em;
+  text-align: left;
+  animation: dots 1.2s steps(4, end) infinite;
+}
+
+@keyframes dots {
+  0% { content: ''; }
+  25% { content: '.'; }
+  50% { content: '..'; }
+  75%, 100% { content: '...'; }
+}
+
+/* --------------------------------------------------------------------------
+   2. MENU
+   Due varianti, come nelle tavole:
+     hero    — Home e Contatti: grande, centrato verticalmente
+     compact — Portfolio e CV: piccolo, ancorato in alto
+   Sono le due sezioni che stanno in una schermata contro le due che scorrono.
+   -------------------------------------------------------------------------- */
+#menu {
+  position: fixed;
+  left: var(--margin-left);
+  z-index: var(--z-menu);
+  /* La posa fra le due varianti la compone js/navigation.js con `transform`,
+     legata allo scorrimento: qui il transform deve restare libero, e per
+     questo il centraggio verticale della variante grande è fatto con `top`
+     e non con translateY. Nessuna transizione: il movimento è il dito. */
+  transform-origin: 0 0;
+}
+
+#menu.is-hero {
+  /* Quattro righe: il centro del blocco sta a due interlinee dall'alto. */
+  top: calc(50% - 2 * var(--lh-nav-hero));
+  font-size: var(--size-nav-hero);
+  line-height: var(--lh-nav-hero);
+}
+
+#menu.is-compact {
+  top: calc(37 * var(--px));
+  font-size: var(--size-nav-compact);
+  line-height: var(--lh-nav-compact);
+}
+
+.menu__link {
+  display: block;
+  font-weight: var(--fw-light);
+  font-style: normal;
+  color: var(--white);
+  white-space: nowrap;
+  width: max-content;
+  /* Il punto fermo è il centro della riga, sul bordo sinistro: è lì che
+     js/navigation.js àncora le voci mentre le posa seguendo lo scorrimento. */
+  transform-origin: 0 50%;
+  transition: transform var(--dur-micro) var(--ease);
+
+  /* PERCHÉ LO SCARTO DEL MOUSE NON ARRIVI IN RITARDO.
+     Queste quattro voci si spostano in continuazione: col passaggio del
+     mouse e, durante lo scorrimento, a ogni fotogramma. Senza questa riga
+     il browser lo scopre solo quando il movimento comincia, e in quel
+     momento deve ridisegnare il testo su un piano nuovo — proprio mentre il
+     filo principale è occupato a disegnare il modello 3D. Risultato: lo
+     scarto parte tardi e si vede a scatti. Dichiarandolo prima, il piano
+     esiste già e il movimento lo porta avanti il compositore, che va per
+     conto suo e non aspetta nessuno. */
+  will-change: transform;
+}
+
+/* §7 — risposta minima al passaggio del mouse: un piccolo scarto laterale.
+   Niente colore, niente scala, niente sottolineatura (è riservata all'attivo). */
+@media (hover: hover) {
+  .menu__link:hover {
+    transform: translateX(calc(6 * var(--px)));
+  }
+}
+
+/* Stato attivo: corsivo + sottolineatura. È l'unico segnale di stato
+   del progetto e non viene usato per nient'altro. */
+.menu__link[aria-current='page'] {
+  font-style: italic;
+  font-weight: var(--fw-regular);
+  text-decoration: underline;
+  text-underline-offset: calc(8 * var(--px));
+  text-decoration-thickness: calc(3 * var(--px));
+}
+
+#menu.is-compact .menu__link[aria-current='page'] {
+  text-underline-offset: calc(4 * var(--px));
+  text-decoration-thickness: calc(1.6 * var(--px));
+}
+
+/* --------------------------------------------------------------------------
+   3. SEZIONI
+   Quattro blocchi uno sotto l'altro, in un unico documento che scorre.
+   Ognuno occupa almeno una schermata: Home e Contatti ci stanno esatte,
+   Portfolio e CV crescono con il loro contenuto.
+
+   Il modello 3D e il menu stanno su livelli fissi e non si muovono: quello
+   che scorre è il testo. È da lì che viene la sensazione di profondità —
+   due piani a velocità diverse, senza nessun effetto aggiunto.
+   -------------------------------------------------------------------------- */
+#sections {
+  position: relative;
+  z-index: var(--z-sections);
+  /* Su telefono, con il menu aperto, il contenuto esce a destra: qui si
+     taglia quello che sporge.
+
+     `clip` E NON `hidden`. Sembrano equivalenti ma non lo sono: `hidden`
+     renderebbe l'elemento un contenitore scorrevole, e lo scorrimento
+     verticale non sarebbe più quello del documento. `clip` taglia e basta,
+     e lascia l'asse verticale al documento. */
+  overflow-x: clip;
+}
+
+.section {
+  position: relative;
+  /* `svh` e non `vh`: su telefono `vh` conta anche la barra del browser che
+     compare e sparisce, e la sezione cambierebbe altezza mentre si scorre. */
+  min-height: 100svh;
+}
+
+/* Il primo fotogramma non si anima: vedi js/navigation.js. */
+body.is-booting .section,
+body.is-booting .section__pane,
+body.is-booting #menu {
+  transition: none;
+}
+
+/* Il pannello di contenuto: ancorato a destra, largo quanto serve alla
+   sezione. Ogni sezione dichiara la propria --pane-w in sections.css. */
+.section__pane {
+  width: var(--pane-w);
+  margin-left: auto;
+  margin-right: var(--margin-right);
+}
+
+/* Sezioni che stanno in una schermata: contenuto centrato verticalmente.
+   L'allineamento orizzontale cambia per sezione, come nelle tavole:
+   Home a sinistra, Contatti a destra. */
+.section--fixed .section__pane {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100svh;
+}
+
+/* Sezioni lunghe: il margine inferiore è uguale al superiore, come chiesto.
+   Alla fine del contenuto si vede lo stesso nero che si vede all'inizio. */
+.section--scroll .section__pane {
+  padding-block: var(--margin-y);
+}
+
+/* --------------------------------------------------------------------------
+   4. TRIANGOLO DI NAVIGAZIONE (solo mobile)
+   Outline di tre linee, non un triangolo pieno.
+   `mix-blend-mode: difference` lo tiene leggibile su qualsiasi fondo:
+   bianco sul nero, scuro se passa sopra un'immagine chiara.
+   -------------------------------------------------------------------------- */
+#panel-toggle {
+  position: fixed;
+  bottom: calc(36 * var(--px));
+  left: 50%;
+  margin-left: calc(-22 * var(--px));
+  /* L'area di tocco è 44x44 anche se il segno grafico è 29x34. */
+  display: none;
+  place-items: center;
+  width: calc(44 * var(--px));
+  height: calc(44 * var(--px));
+  min-width: 44px;
+  min-height: 44px;
+  z-index: var(--z-toggle);
+  mix-blend-mode: difference;
+}
+
+#panel-toggle svg {
+  width: calc(29 * var(--px));
+  height: calc(34 * var(--px));
+  transition: transform var(--dur-micro) var(--ease);
+}
+
+/* Punta a destra quando si entra nel contenuto, a sinistra quando si torna
+   indietro. Il cambio è una rotazione breve, non un cambio di icona. */
+#panel-toggle[data-direction='forward'] svg {
+  transform: rotate(0deg);
+}
+
+#panel-toggle[data-direction='back'] svg {
+  transform: rotate(180deg);
+}
+
+/* --------------------------------------------------------------------------
+   5. MOBILE
+   Composizione diversa, non il desktop rimpicciolito.
+   L'asse orizzontale ha tre posizioni:
+     panel 0  MENU              il contenuto è fuori campo a destra
+     panel 1  contenuto parziale il modello copre la parte sinistra
+     panel 2  contenuto pieno    il modello è traslato via, il testo respira
+   La Home ha solo 0 e 1: il suo contenuto sta già dentro la larghezza.
+   -------------------------------------------------------------------------- */
+@media (max-width: 899px) {
+  /* SU TELEFONO LE SEZIONI SONO SCHEDE, NON UN DOCUMENTO CHE SCORRE.
+     Quattro livelli sovrapposti a tutta pagina: quello attivo è in campo,
+     gli altri stanno una schermata sopra o sotto. Il passaggio segue il
+     dito (js/navigation.js) e al rilascio si assesta.
+
+     È voluto che desktop e telefono si comportino in modo diverso: col dito
+     una scheda per volta dà il controllo che uno schermo piccolo richiede —
+     il modello 3D resta governabile e ogni composizione si legge intera. */
+  html,
+  body {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  #sections {
+    position: fixed;
+    inset: 0;
+    overflow: clip;
+  }
+
+  .section {
+    position: absolute;
+    inset: 0;
+    min-height: 0;
+    pointer-events: none;
+    transform: translateY(100%);
+    transition: transform var(--dur-section) var(--ease-section);
+  }
+
+  .section.is-above {
+    transform: translateY(-100%);
+  }
+
+  .section.is-active {
+    transform: none;
+    pointer-events: auto;
+  }
+
+  /* Mentre il dito trascina in verticale, le sezioni stanno dove sta il
+     dito: la transizione si spegne e si riaccende al rilascio. */
+  body.is-dragging-y .section {
+    transition: none;
+  }
+
+  /* Il pannello riempie la scheda; i contenuti lunghi scorrono dentro di
+     essa, e il gesto di sezione parte solo quando sono a fine corsa. */
+  .section__pane {
+    height: 100%;
+    /* IL GESTO ORIZZONTALE È DEL SITO.
+       In verticale scorre il browser (e si pizzica per ingrandire); in
+       orizzontale qui non c'è niente da scorrere, quindi il browser non deve
+       nemmeno provarci: lo swipe laterale apre e chiude il menu. Senza questa
+       riga se lo prendeva lui, per il suo "torna indietro", e la pagina si
+       ricaricava. La galleria del Portfolio fa eccezione: lì si scorre
+       davvero in orizzontale (vedi css/sections.css). */
+    touch-action: pan-y pinch-zoom;
+  }
+
+  .section--fixed .section__pane,
+  #portfolio .section__pane {
+    min-height: 0;
+  }
+
+  .section--scroll .section__pane,
+  #contatti .section__pane {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+  }
+
+  .section--scroll .section__pane::-webkit-scrollbar,
+  #contatti .section__pane::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* IL MENU ENTRA DA SINISTRA, NON IN DISSOLVENZA.
+     Sta sulla stessa superficie del contenuto e del modello: quando si entra
+     in una sezione esce di lato, quando si torna rientra. Con l'opacità
+     sembrava comparire dal nulla, fuori dal movimento di tutto il resto.
+
+     La traslazione è la larghezza del menu più il margine sinistro: così
+     esce davvero dallo schermo invece di restare mezzo visibile.
+
+     Le tre regole stanno insieme perché `is-hero` e `is-compact` — che sul
+     desktop spostano il menu in verticale — qui devono limitarsi a non
+     sovrascrivere la traslazione orizzontale. */
+  #menu,
+  #menu.is-hero,
+  #menu.is-compact {
+    left: var(--margin-left);
+    top: calc(30 * var(--px));
+    font-size: var(--size-nav-compact);
+    line-height: var(--lh-nav-compact);
+    /* I 16 in più oltre la larghezza: la voce attiva è in corsivo e il
+       corsivo sborda dalla scatola del testo. Senza, restava visibile il
+       puntino della "i" di Contatti. */
+    transform: translateX(calc(-100% - var(--margin-left) - 16px));
+    pointer-events: none;
+    transition: transform var(--dur-section) var(--ease-section);
+  }
+
+  /* Il menu è in campo solo al pannello 0. */
+  body.panel-0 #menu {
+    transform: translateX(0);
+    pointer-events: auto;
+  }
+
+  #panel-toggle {
+    display: grid;
+  }
+
+  .section__pane {
+    width: calc(100vw - var(--margin-left) - var(--margin-right));
+    margin-left: var(--margin-left);
+    margin-right: var(--margin-right);
+    transition: transform var(--dur-section) var(--ease-section);
+    /* La larghezza del testo non cambia mai fra parziale e pieno:
+       cambia solo la posizione. Così non c'è riflusso durante la
+       traslazione e il movimento resta pulito. */
+    --shift-1: calc(146 * var(--px));
+    --shift-2: 0px;
+  }
+
+  body.panel-0 .section__pane {
+    transform: translateX(100vw);
+  }
+
+  body.panel-1 .section__pane {
+    transform: translateX(var(--shift-1));
+  }
+
+  body.panel-2 .section__pane {
+    transform: translateX(var(--shift-2));
+  }
+
+  /* Mentre il dito trascina, il pannello sta dove sta il dito: la transizione
+     va spenta, altrimenti insegue e il movimento sembra elastico.
+     Si riaccende al rilascio, per portare il pannello alla posa scelta. */
+  body.is-dragging .section__pane,
+  body.is-dragging #menu,
+  body.is-dragging #panel-toggle svg {
+    transition: none;
+  }
+
+  /* La Home non ha stato parziale: il suo contenuto è già leggibile. */
+  #home .section__pane {
+    --shift-1: 0px;
+  }
+
+  /* CV — respiro sopra e sotto.
+     In basso ci vogliono almeno 80 (il triangolo sta a 36 dal fondo su un
+     bersaglio da 44): senza, l'ultima riga del curriculum finisce sotto al
+     segno di navigazione. Con 128 ci passa anche una banda di nero, e la
+     disponibilità a trasferte non tocca più il triangolo. */
+  #cv .section__pane {
+    padding-top: calc(72 * var(--px));
+    padding-bottom: calc(128 * var(--px));
+  }
+}

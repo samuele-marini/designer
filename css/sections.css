@@ -1,0 +1,563 @@
+/* ==========================================================================
+   SEZIONI — Home, Portfolio, CV, Contatti
+   Le misure sono quelle delle tavole Figma (vedi css/base.css per `--px`).
+   ========================================================================== */
+
+/* ==========================================================================
+   HOME
+   Tavola: titolo, foto circolare e presentazione allineati a sinistra su
+   un'unica colonna larga 280, il tutto centrato verticalmente.
+   Su mobile la stessa colonna è allineata a destra.
+   ========================================================================== */
+#home {
+  --pane-w: calc(280 * var(--px));
+}
+
+.home__name {
+  font-size: var(--size-display);
+  font-weight: var(--fw-light);
+  line-height: 1.05;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.home__portrait {
+  width: calc(152 * var(--px));
+  height: calc(152 * var(--px));
+  margin-top: calc(52 * var(--px));
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--black);
+}
+
+/* Il ritratto è già quadrato: in un cerchio quadrato `cover` non taglia
+   niente e non ingrandisce, lo adatta soltanto al diametro. */
+.home__portrait img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.home__intro {
+  margin-top: calc(47 * var(--px));
+}
+
+.home__intro p + p {
+  /* Le tavole separano i due paragrafi con esattamente una riga vuota. */
+  margin-top: var(--lh-body);
+}
+
+@media (max-width: 899px) {
+  #home {
+    --pane-w: calc(100vw - var(--margin-left) - var(--margin-right));
+  }
+
+  /* LA HOME È UNA BANDIERA A SINISTRA, come nella tavola: il margine destro
+     è dritto, quello sinistro resta libero. Il blocco è centrato in verticale
+     (lo fa .section--fixed), ma il TESTO non è centrato: sono due cose
+     diverse e vanno tenute separate. */
+  /* IL BLOCCO STA AL CENTRO DELLO SCHERMO.
+     Per un periodo è stato ancorato in alto, allineato alla riga "Home" del
+     menu: sulla carta i due centri coincidevano, ma sullo schermo la
+     presentazione finiva schiacciata nell'angolo in alto a destra e il resto
+     della sezione restava vuoto. Al centro respira, ed è come nasceva. */
+  #home .section__pane {
+    align-items: stretch;
+    text-align: right;
+  }
+
+  .home__name {
+    /* Su una riga sola: a 30 il titolo misura 213 e la colonna ne ha 310. */
+    white-space: nowrap;
+  }
+
+  /* Ritratto e testo sono blocchi: per portarli a destra serve il margine. */
+  .home__portrait {
+    width: calc(128 * var(--px));
+    height: calc(128 * var(--px));
+    margin-top: calc(30 * var(--px));
+    margin-left: auto;
+  }
+
+  .home__intro {
+    margin-top: calc(30 * var(--px));
+    margin-left: auto;
+    max-width: calc(175 * var(--px));
+  }
+}
+
+/* ==========================================================================
+   PORTFOLIO
+   Reticolo a passo fisso 150 x 200. Le immagini sono CENTRATE sul nodo del
+   reticolo, non distribuite con gronde uguali: è per questo che lo spazio
+   visibile fra due immagini cambia (15 / 25 / 30) a seconda dei formati.
+   Le linee bianche presenti nelle tavole sono guide di costruzione:
+   definiscono questo reticolo e non vengono disegnate.
+
+   I tre formati hanno area quasi identica (15000 / 14400 / 15000): il
+   quadrato è già il 4% più piccolo dell'equivalenza matematica, che è
+   esattamente la correzione ottica necessaria a pareggiare il peso visivo.
+   Le proporzioni Figma sono quindi usate così come sono, senza formule.
+   ========================================================================== */
+#portfolio {
+  --cell-w: calc(150 * var(--px));
+  --cell-h: calc(200 * var(--px));
+  --pane-w: calc(450 * var(--px)); /* 3 colonne */
+
+  /* Quanto è grande l'immagine dentro la sua cella. Il passo del reticolo
+     non si tocca — è quello delle tavole — ma su telefono le immagini si
+     riducono un filo: lo spazio che lasciano diventa la gronda fra una e
+     l'altra, e due riquadri vicini smettono di sembrare un rettangolo solo.
+     A 1 le misure sono esattamente quelle di Figma. */
+  --tile: 1;
+}
+
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(3, var(--cell-w));
+  grid-auto-rows: var(--cell-h);
+  width: var(--pane-w);
+}
+
+.project {
+  display: grid;
+  place-items: center;
+}
+
+/* Il blocco che porta l'immagine: è questo a essere centrato nella cella. */
+.project__inner {
+  position: relative;
+}
+
+.project--landscape .project__inner {
+  width: calc(150 * var(--px) * var(--tile));
+  height: calc(100 * var(--px) * var(--tile));
+}
+
+.project--square .project__inner {
+  width: calc(120 * var(--px) * var(--tile));
+  height: calc(120 * var(--px) * var(--tile));
+}
+
+.project--portrait .project__inner {
+  width: calc(100 * var(--px) * var(--tile));
+  height: calc(150 * var(--px) * var(--tile));
+}
+
+/* Il titolo sta sopra l'immagine e a filo del suo bordo sinistro.
+   È fuori dal flusso, così non altera il centraggio nella cella. */
+/* Il titolo non deve competere con l'immagine: sta sopra, a filo del suo
+   bordo sinistro, un punto più piccolo del corpo didascalia generale.
+   Sulla tavola misura 10, non 11: è una nota, non un'etichetta. */
+.project__title {
+  position: absolute;
+  left: 0;
+  bottom: 100%;
+  margin-bottom: calc(6 * var(--px));
+  white-space: nowrap;
+  font-size: calc(10 * var(--px));
+  line-height: 1.2;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.project__media {
+  width: 100%;
+  height: 100%;
+  /* SEGNAPOSTO — sostituire con l'immagine definitiva.
+     Vedi js/data/projects.js: basta valorizzare `image`. */
+  background: var(--placeholder-box);
+  overflow: hidden;
+}
+
+/* Con l'immagine il fondo è nero: è il colore delle bande che compaiono
+   quando un'immagine è mostrata intera (fit: 'contain') e deve sparire nella
+   pagina, non disegnare un bordo. */
+.project__media.has-image {
+  background: var(--black);
+}
+
+/* L'inquadratura si regola progetto per progetto in js/data/projects.js
+   (fit, position, zoom). Nessuna immagine viene mai deformata: object-fit
+   mantiene sempre le proporzioni originali. */
+.project__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: var(--fit, cover);
+  object-position: var(--pos, 50% 50%);
+  transform: scale(var(--zoom, 1));
+}
+
+.project__link {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transition: opacity var(--dur-micro) var(--ease);
+}
+
+@media (hover: hover) {
+  .project__link:hover {
+    opacity: 0.72;
+  }
+}
+
+/* Mobile: stessa griglia ruotata. Tre righe fisse, le colonne proseguono
+   verso destra e la galleria scorre orizzontalmente. */
+@media (max-width: 899px) {
+  #portfolio {
+    --pane-w: 100vw;
+    /* 0,9: le immagini lasciano il 10% della cella come gronda. Le gronde
+       più strette della griglia passano da 15 a 28, e le proporzioni dei tre
+       formati restano quelle delle tavole. */
+    --tile: 0.9;
+  }
+
+  /* LA GALLERIA VA DA BORDO A BORDO.
+     Prima il pannello aveva i margini standard, quindi la striscia di
+     immagini era chiusa fra due bande nere e sembrava inscatolata. Sulla
+     tavola invece la griglia esce dallo schermo a destra: è una striscia che
+     continua, e si legge così solo se arriva al bordo. Il margine iniziale
+     resta, ma come spazio DENTRO la galleria (vedi .gallery). */
+  #portfolio .section__pane {
+    width: 100vw;
+    margin-left: 0;
+    margin-right: 0;
+    /* La striscia scorre in orizzontale e basta: in verticale è il gesto di
+       sezione a comandare (vedi js/navigation.js). */
+    overflow-x: auto;
+    overflow-y: hidden;
+    /* Qui in orizzontale si scorre per davvero, quindi il dito deve poterlo
+       fare; `contain` impedisce che, arrivati a fine corsa, quello che avanza
+       diventi il "torna indietro" del browser. */
+    touch-action: pan-x pan-y pinch-zoom;
+    overscroll-behavior-x: contain;
+    display: flex;
+    align-items: center;
+    scrollbar-width: none;
+  }
+
+  #portfolio .section__pane::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* IL PANNELLO DEL PORTFOLIO NON TRASLA.
+     Su CV e Contatti il contenuto parte traslato di 146 e ci torna con un
+     gesto. Qui no: quei 146 diventano il margine iniziale DENTRO la galleria,
+     cioè parte di quello che scorre.
+
+     Il motivo è il modello 3D. Il modello trasla esattamente dei pixel di cui
+     scorre la galleria (js/navigation.js, mobileCenterPx), quindi il margine
+     e il modello se ne vanno insieme, alla stessa velocità del dito: appena
+     la galleria si muove, il modello si muove. Con il pannello traslato il
+     modello restava invece fermo fino al cambio di pannello, e in mezzo si
+     sentiva un muro.
+
+     I 146 di margine e i 148 di corsa del modello coincidono: quando il
+     margine è scorso via, il modello è appena uscito di campo. */
+  #portfolio .section__pane {
+    --shift-1: 0px;
+  }
+
+  .gallery {
+    grid-template-columns: none;
+    grid-template-rows: repeat(3, var(--cell-h));
+    grid-auto-flow: column;
+    grid-auto-columns: var(--cell-w);
+    width: max-content;
+    /* Lo spazio che la composizione lascia al modello, a galleria ferma:
+       il margine sinistro più i 146 della tavola. Non è un margine del
+       pannello ma un vuoto dentro la striscia, quindi scorre via col dito
+       insieme al modello. */
+    padding-left: calc(176 * var(--px));
+    /* Il nero dopo l'ultima colonna è uguale a quello prima della prima. */
+    padding-right: var(--margin-left);
+  }
+}
+
+/* ==========================================================================
+   CV
+   Colonna di testo a sinistra del margine destro. Contenuto: il PDF 2026
+   nella cartella references (vedi js/data/cv-data.js).
+   Etichette in maiuscolo dello stesso corpo del testo: la gerarchia nasce
+   dal maiuscolo e dallo spazio, non da un salto di dimensione.
+   ========================================================================== */
+#cv {
+  --pane-w: calc(417 * var(--px));
+}
+
+.cv__title {
+  font-size: var(--size-body);
+  line-height: var(--lh-body);
+  font-weight: var(--fw-regular);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.cv__tagline {
+  margin-top: calc(8 * var(--px));
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.cv__contact {
+  margin-top: calc(8 * var(--px));
+}
+
+.cv__section {
+  margin-top: calc(34 * var(--px));
+}
+
+.cv__section-label {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.cv__entry {
+  margin-top: calc(18 * var(--px));
+}
+
+.cv__entry-title {
+  font-weight: var(--fw-regular);
+  font-size: var(--size-body);
+  line-height: var(--lh-body);
+}
+
+.cv__entry-meta {
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.cv__entry-text {
+  margin-top: calc(4 * var(--px));
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* Competenze digitali: due colonne, come nel PDF. */
+.cv__skills {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: calc(18 * var(--px)) calc(24 * var(--px));
+  margin-top: calc(18 * var(--px));
+}
+
+.cv__skill-group-label {
+  color: rgba(255, 255, 255, 0.62);
+}
+
+@media (max-width: 899px) {
+  #cv {
+    --pane-w: calc(100vw - var(--margin-left) - var(--margin-right));
+  }
+
+  .cv__skills {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================================================
+   CONTATTI
+   Tutto allineato al bordo destro del pannello, su un ritmo verticale
+   rigido di 30. Il pannello è largo quanto la textarea (275): è l'elemento
+   più largo della composizione e detta la colonna.
+   ========================================================================== */
+#contatti {
+  --pane-w: calc(275 * var(--px));
+}
+
+/* I figli del pannello prendono tutta la colonna e si allineano con
+   text-align: così l'allineamento a destra non dipende da align-items,
+   che una regola più generica potrebbe sovrascrivere. */
+#contatti .section__pane {
+  align-items: stretch;
+  text-align: right;
+}
+
+.contact__list,
+.contact__social,
+.contact__form {
+  width: 100%;
+}
+
+.contact__list li {
+  line-height: calc(30 * var(--px));
+}
+
+.contact__heading {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.contact__social {
+  display: flex;
+  justify-content: flex-end;
+  gap: calc(10 * var(--px));
+  margin-top: calc(18 * var(--px));
+}
+
+.contact__social a {
+  display: grid;
+  place-items: center;
+  width: calc(30 * var(--px));
+  height: calc(30 * var(--px));
+  transition: opacity var(--dur-micro) var(--ease);
+}
+
+.contact__social svg {
+  width: 100%;
+  height: 100%;
+  fill: var(--white);
+}
+
+@media (hover: hover) {
+  .contact__social a:hover {
+    opacity: 0.7;
+  }
+}
+
+/* --- Form ---------------------------------------------------------------- */
+.contact__form {
+  width: 100%;
+  margin-top: calc(15 * var(--px));
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.contact__field {
+  /* Le tavole danno 158 di input contro 275 di textarea: gli input sono
+     il 57,5% della colonna. Il rapporto vale a qualunque larghezza. */
+  width: 57.5%;
+  height: calc(25 * var(--px));
+  margin-bottom: calc(14 * var(--px));
+}
+
+.contact__field--message {
+  width: 100%;
+  height: calc(134 * var(--px));
+  resize: none;
+}
+
+.contact__field,
+.contact__field--message {
+  font-family: var(--font);
+  font-size: var(--size-caption);
+  line-height: 1.4;
+  color: var(--field-text);
+  background: var(--field-bg);
+  border: 0;
+  border-radius: 0;
+  padding: calc(6 * var(--px)) calc(8 * var(--px));
+  text-align: left;
+}
+
+.contact__field::placeholder {
+  color: var(--field-placeholder);
+}
+
+.contact__field:focus-visible {
+  outline: calc(2 * var(--px)) solid var(--accent);
+  outline-offset: 0;
+}
+
+/* SEND — corsivo, sottolineato, un poco più marcato del testo corrente
+   ma non un vero bold.
+
+   Nessun margine proprio: lo stacco dal riquadro del messaggio è quello che
+   il riquadro si porta dietro (14, come fra un campo e l'altro). SEND fa
+   parte del modulo, quindi tiene il passo del modulo — prima ne stava 32
+   lontano e sembrava un'altra cosa. */
+.contact__send {
+  margin-top: 0;
+  font-size: var(--size-caption);
+  font-style: italic;
+  font-weight: var(--fw-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  text-decoration: underline;
+  text-underline-offset: calc(3 * var(--px));
+  text-decoration-thickness: calc(1.5 * var(--px));
+  transition: opacity var(--dur-micro) var(--ease);
+}
+
+.contact__send:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+@media (hover: hover) {
+  .contact__send:not(:disabled):hover {
+    opacity: 0.7;
+  }
+}
+
+/* Esito dell'invio. Compare solo dopo un tentativo, sotto SEND. */
+.contact__status {
+  margin-top: calc(10 * var(--px));
+  font-size: var(--size-caption);
+  min-height: calc(16 * var(--px));
+}
+
+.contact__status[data-state='error'] {
+  color: var(--danger);
+}
+
+@media (max-width: 899px) {
+  #contatti {
+    --pane-w: calc(100vw - var(--margin-left) - var(--margin-right));
+  }
+
+  /* I CONTATTI NON HANNO UNO STATO PARZIALE.
+     Sulla tavola il blocco di contatto è allineato al margine destro normale,
+     non traslato: entrando nella sezione si legge già tutto. Con la
+     traslazione da 146 finiva invece fuori schermo e bisognava trascinare per
+     scoprire perfino l'indirizzo email. */
+  #contatti .section__pane {
+    --shift-1: 0px;
+  }
+
+  /* Dall'alto e non centrato: l'informazione si legge a partire dal margine
+     superiore, e quello che eventualmente non ci sta è la coda del modulo.
+     Centrando il blocco, su uno schermo corto si perdeva anche la testa.
+
+     Lo scorrimento verticale serve solo a raggiungere SEND quando il telefono
+     è basso. Niente viene compresso: i campi tengono le misure della tavola. */
+  /* Anche i Contatti sono una bandiera a sinistra, allineata al margine
+     destro come nella tavola. Il blocco è bilanciato in verticale, ma il
+     testo NON è centrato.
+
+     `safe center` centra quando il contenuto ci sta e allinea in alto quando
+     è più alto dello schermo: senza, su un telefono corto la testa del blocco
+     finirebbe sopra il bordo e non si potrebbe più raggiungere. */
+  /* IL BLOCCO STA IN BASSO, non al centro. Due motivi, e sono entrambi di
+     composizione: al centro il riquadro del messaggio arrivava addosso alla
+     punta del modello, che è più larga proprio a metà altezza; e SEND
+     finiva troppo vicino al triangolo.
+
+     Il fondo è 92: il triangolo occupa gli ultimi 80 (36 di margine più 44
+     di bersaglio), sotto SEND c'è la riga di risposta del modulo (16), e
+     quello che resta fra SEND e il triangolo è circa 38 — un centimetro. */
+  #contatti .section__pane {
+    align-items: stretch;
+    text-align: right;
+    justify-content: flex-end;
+    padding-block: calc(40 * var(--px)) calc(92 * var(--px));
+  }
+
+  /* Le misure del modulo vengono dalla tavola mobile: 158 i due campi, 275 il
+     messaggio, allineati a destra sul margine. Su desktop si ricavano in
+     percentuale perché lì la colonna è larga esattamente 275; qui la colonna
+     è larga quanto la finestra meno i margini, quindi le percentuali darebbero
+     campi più larghi del disegno.
+
+     Il messaggio è 205 e non 275. Sulla tavola quel riquadro parte da 182 e
+     ESCE dallo schermo a destra: è una scelta di composizione che su carta
+     funziona, ma in un campo di testo vero il cursore finirebbe fuori vista
+     mentre si scrive. A 205 il riquadro resta più largo dei due campi — la
+     gerarchia del disegno è quella — sta tutto dentro lo schermo e lascia
+     scoperta la punta del modello. L'altezza è quella della tavola, quindi la
+     proporzione verticale della composizione non cambia. */
+  .contact__field {
+    width: calc(158 * var(--px));
+  }
+
+  .contact__field--message {
+    width: calc(205 * var(--px));
+  }
+}
