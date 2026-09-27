@@ -487,6 +487,25 @@
   }
 }
 
+/* PRIVACY POLICY — sotto SEND, un gradino più sommessa: stesso corpo, niente
+   corsivo né maiuscolo, il grigio dei valori secondari del sito. Apre la
+   pagina interna (js/data/privacy.js). */
+.contact__privacy {
+  margin-top: calc(8 * var(--px));
+  font-size: var(--size-caption);
+  color: rgba(255, 255, 255, 0.62);
+  text-decoration: underline;
+  text-underline-offset: calc(3 * var(--px));
+  text-decoration-thickness: calc(1 * var(--px));
+  transition: opacity var(--dur-micro) var(--ease);
+}
+
+@media (hover: hover) {
+  .contact__privacy:hover {
+    opacity: 0.7;
+  }
+}
+
 /* Esito dell'invio. Compare solo dopo un tentativo, sotto SEND. */
 .contact__status {
   margin-top: calc(10 * var(--px));

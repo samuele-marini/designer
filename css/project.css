@@ -535,10 +535,69 @@ body.page-dragging .project-view {
   margin-top: calc(12 * var(--px));
 }
 
+/* --------------------------------------------------------------------------
+   PAGINA DI SOLO TESTO — la Privacy Policy (js/data/privacy.js)
+   La stessa scheda dei progetti: si nascondono immagini, miniature e
+   informazioni, resta l'intestazione e compare il testo. Corpo e interlinea
+   sono quelli del testo dei progetti; le etichette in maiuscolo come nel CV.
+   -------------------------------------------------------------------------- */
+.pv__doc,
+.project-view.is-doc .pv__stage,
+.project-view.is-doc .pv__thumbs,
+.project-view.is-doc .pv__text,
+.project-view.is-doc .pv__info {
+  display: none;
+}
+
+.project-view.is-doc .pv__doc {
+  display: block;
+  margin-top: calc(27 * var(--px));
+  font-size: calc(12 * var(--px));
+  line-height: calc(15 * var(--px));
+}
+
+/* Su desktop la colonna è più stretta di quella dei progetti (450): è solo
+   testo. 320 è il minimo perché "Privacy Policy" stia su una riga accanto al
+   triangolo, e resta lontana dal modello anche sulla sezione Contatti. */
+@media (min-width: 900px) {
+  .project-view.is-doc .pv__column {
+    width: calc(320 * var(--px));
+  }
+}
+
+.pv__doc p + p {
+  margin-top: calc(15 * var(--px));
+}
+
+.pv__doc-meta {
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.pv__doc-section {
+  margin-top: calc(27 * var(--px));
+}
+
+.pv__doc-label {
+  font-size: inherit;
+  font-weight: inherit;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
 /* ==========================================================================
    MOBILE — tavola mobile_progetti, 375 di larghezza
    ========================================================================== */
 @media (max-width: 899px) {
+  .project-view.is-doc .pv__doc {
+    margin-top: calc(25 * var(--px));
+    font-size: calc(14 * var(--px));
+    line-height: calc(17 * var(--px));
+  }
+
+  .pv__doc p + p {
+    margin-top: calc(17 * var(--px));
+  }
+
   /* Tutto lo schermo, fondo nero, sopra il triangolo del sito e il menu.
      Il modo di entrare è lo stesso del desktop (vedi in cima), ma qui la
      scheda copre tutto: il viaggio è tutta la larghezza dello schermo. */

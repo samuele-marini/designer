@@ -16,6 +16,7 @@ import { renderGallery } from './gallery.js';
 import { createProjectView } from './project.js';
 import { renderCV } from './cv.js';
 import { initForm } from './form.js';
+import { privacy } from './data/privacy.js';
 
 const scene = createScene(document.getElementById('webgl'), {
   loadingEl: document.getElementById('scene-loading'),
@@ -41,5 +42,11 @@ initForm(
   document.getElementById('contact-form'),
   document.getElementById('contact-status')
 );
+
+// La Privacy Policy si apre come una pagina progetto: stessa scheda.
+const privacyLink = document.getElementById('privacy-open');
+if (privacyLink) {
+  privacyLink.addEventListener('click', () => project.openDoc(privacy, privacyLink));
+}
 
 createNavigation({ scene, project });

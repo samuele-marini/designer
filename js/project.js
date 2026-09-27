@@ -103,6 +103,7 @@ export function createProjectView(root, { scene = null } = {}) {
         <ul class="pv__thumbs"></ul>
         <div class="pv__text"></div>
         <div class="pv__info"></div>
+        <div class="pv__doc"></div>
       </div>
     </div>`;
 
@@ -113,6 +114,7 @@ export function createProjectView(root, { scene = null } = {}) {
   const textEl = root.querySelector('.pv__text');
   const infoEl = root.querySelector('.pv__info');
   const back = root.querySelector('.pv__back');
+  const docEl = root.querySelector('.pv__doc');
 
   const sectionsEl = document.getElementById('sections');
   const stageEl = document.getElementById('stage');
@@ -150,7 +152,29 @@ export function createProjectView(root, { scene = null } = {}) {
   function open(project, from) {
     const slug = project.slug;
     if (!current || current.slug !== slug) render(project);
+    // Dopo un documento il titolo va rimesso: il DOM del progetto è rimasto.
+    titleEl.textContent = project.title;
+    setDocMode(false);
+    show(from);
+  }
 
+  /* UNA PAGINA DI SOLO TESTO (la Privacy Policy), nella stessa scheda dei
+     progetti: stessa entrata, stessa uscita, stesso triangolo, stesso swipe.
+     Il progetto eventualmente già costruito resta dov'è, solo nascosto: così
+     riaprendolo non si riscarica niente. */
+  function openDoc(doc, from) {
+    titleEl.textContent = doc.title;
+    if (docEl.dataset.title !== doc.title) renderDoc(doc);
+    setDocMode(true);
+    show(from);
+  }
+
+  function setDocMode(on) {
+    root.classList.toggle('is-doc', on);
+    back.setAttribute('aria-label', on ? 'Torna ai contatti' : 'Torna al portfolio');
+  }
+
+  function show(from) {
     opener = from || null;
     scroller.scrollTop = 0;
     isOpen = true;
@@ -162,7 +186,7 @@ export function createProjectView(root, { scene = null } = {}) {
     // Sotto, la pagina si ferma: rotella e dito sono tutti del progetto.
     document.documentElement.classList.add('project-open');
     turnPivot(1); // il cenno del modello, mentre la scheda si posa sopra
-    startMovie();
+    if (!root.classList.contains('is-doc')) startMovie();
     // Il fuoco va al triangolo: da tastiera si può tornare subito indietro.
     back.focus({ preventScroll: true });
   }
@@ -723,6 +747,60 @@ export function createProjectView(root, { scene = null } = {}) {
     return col;
   }
 
+  /* Il documento: data, introduzione, poi una sezione per ogni voce, col
+     titolo in maiuscolo come le etichette del CV. */
+  function renderDoc(doc) {
+    const paragraphs = (list) =>
+      (list || []).filter(Boolean).map((t) => {
+        const p = document.createElement('p');
+        p.append(...linkify(t));
+        return p;
+      });
+
+    const meta = document.createElement('p');
+    meta.className = 'pv__doc-meta';
+    meta.textContent = doc.updated || '';
+
+    const blocks = (doc.sections || []).map((section) => {
+      const block = document.createElement('section');
+      block.className = 'pv__doc-section';
+      const label = document.createElement('h3');
+      label.className = 'pv__doc-label';
+      label.textContent = section.label;
+      block.append(label, ...paragraphs(section.text));
+      return block;
+    });
+
+    docEl.replaceChildren(meta, ...paragraphs(doc.intro), ...blocks);
+    docEl.dataset.title = doc.title;
+  }
+
+  /* Gli indirizzi e-mail e web del testo diventano link veri. Il resto resta
+     testo: niente HTML dai dati. */
+  function linkify(text) {
+    const out = [];
+    const pattern = /([\w.+-]+@[\w-]+\.[\w.]+)|(www\.[\w-]+\.[\w.]+)/g;
+    let last = 0;
+    let match;
+    while ((match = pattern.exec(text))) {
+      if (match.index > last) out.push(document.createTextNode(text.slice(last, match.index)));
+      const a = document.createElement('a');
+      a.className = 'underlined';
+      a.textContent = match[0];
+      if (match[1]) {
+        a.href = `mailto:${match[1]}`;
+      } else {
+        a.href = `https://${match[2]}`;
+        a.target = '_blank';
+        a.rel = 'noopener';
+      }
+      out.push(a);
+      last = match.index + match[0].length;
+    }
+    if (last < text.length) out.push(document.createTextNode(text.slice(last)));
+    return out;
+  }
+
   /* Un progetto senza pagina nei dati mostra comunque la sua immagine. */
   function fallbackPage(project) {
     return { images: [{ src: project.image }], text: [], info: null };
@@ -762,6 +840,7 @@ export function createProjectView(root, { scene = null } = {}) {
 
   return {
     open,
+    openDoc,
     close,
     prefetch,
     isOpen: () => isOpen,
@@ -773,5 +852,5 @@ function pauseVideos(el) {
 }
 
 function nullView() {
-  return { open() {}, close() {}, prefetch() {}, isOpen: () => false };
+  return { open() {}, openDoc() {}, close() {}, prefetch() {}, isOpen: () => false };
 }
