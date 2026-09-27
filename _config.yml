@@ -1,0 +1,13 @@
+# Configurazione di GitHub Pages (Jekyll).
+#
+# Serve solo a una cosa: NON pubblicare le guide. Senza questo file GitHub
+# Pages le mette online come pagine (…/GUIDA-AGGIORNARE-IL-SITO.html) e
+# come testo (…/README.md), e Google può indicizzarle. Verificato sul sito
+# pubblicato il 27 settembre 2026.
+#
+# I file restano nel repository e sul tuo computer: semplicemente non
+# finiscono sul sito. Il resto del sito viene pubblicato come prima.
+exclude:
+  - README.md
+  - GUIDA-AGGIORNARE-IL-SITO.md
+  - GUIDA-PUBBLICARE-SU-GITHUB.md

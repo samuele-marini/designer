@@ -9,6 +9,47 @@
       name="description"
       content="Portfolio di Samuele Marini, designer. Progettazione di prodotto e comunicazione, con un background tecnico nella progettazione meccanica e nell'arredo."
     />
+    <meta name="author" content="Samuele Marini" />
+
+    <!-- SEO. L'indirizzo ufficiale del sito, verificato su GitHub Pages:
+         https://samuele-marini.github.io/designer/ (senza la barra finale
+         GitHub reindirizza qui). Se un giorno si passa a un dominio proprio,
+         va cambiato in tutti i punti qui sotto e in sitemap.xml. -->
+    <link rel="canonical" href="https://samuele-marini.github.io/designer/" />
+
+    <!-- Anteprima quando il link si condivide (WhatsApp, LinkedIn, ...).
+         L'immagine è assets/og-image.jpg, 1200x630. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="it_IT" />
+    <meta property="og:site_name" content="Samuele Marini" />
+    <meta property="og:title" content="Samuele Marini — Designer" />
+    <meta
+      property="og:description"
+      content="Portfolio di Samuele Marini, designer. Progettazione di prodotto e comunicazione, con un background tecnico nella progettazione meccanica e nell'arredo."
+    />
+    <meta property="og:url" content="https://samuele-marini.github.io/designer/" />
+    <meta property="og:image" content="https://samuele-marini.github.io/designer/assets/og-image.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Samuele Marini — Designer" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <!-- Chi è il sito, detto a Google in forma strutturata. Solo dati già
+         pubblici nel sito: nome, professione, ritratto, profili social. -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Person",
+        "name": "Samuele Marini",
+        "jobTitle": "Designer",
+        "url": "https://samuele-marini.github.io/designer/",
+        "image": "https://samuele-marini.github.io/designer/webp/samuele-marini.webp",
+        "sameAs": [
+          "https://www.instagram.com/samuele.pdf",
+          "https://www.linkedin.com/in/samuele-marini-28bb66306"
+        ]
+      }
+    </script>
 
     <!-- Il segno nella linguetta del browser: SM bianco su nero, in Inter
          come tutto il resto. È un PNG da 512 perché serve anche come icona
@@ -102,6 +143,8 @@
            js/data/projects.js.
            =============================================================== -->
       <section id="portfolio" class="section section--scroll" aria-label="Portfolio">
+        <!-- Titolo per i motori di ricerca e i lettori di schermo: non si vede. -->
+        <h2 class="visually-hidden">Portfolio</h2>
         <div class="section__pane">
           <ul id="gallery" class="gallery"></ul>
         </div>
@@ -122,6 +165,8 @@
            CONTATTI
            =============================================================== -->
       <section id="contatti" class="section section--fixed" aria-label="Contatti">
+        <!-- Titolo per i motori di ricerca e i lettori di schermo: non si vede. -->
+        <h2 class="visually-hidden">Contatti</h2>
         <div class="section__pane contact__pane">
           <ul class="contact__list">
             <li class="contact__heading">Let's work together!</li>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Il sito è una pagina sola: Portfolio, CV e Contatti sono sezioni della
+     stessa pagina, e i progetti si aprono al suo interno. Un solo indirizzo.
+     Da inviare in Google Search Console (Sitemap) con questo indirizzo:
+     https://samuele-marini.github.io/designer/sitemap.xml -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://samuele-marini.github.io/designer/</loc>
+    <lastmod>2026-09-27</lastmod>
+  </url>
+</urlset>
