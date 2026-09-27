@@ -41,6 +41,15 @@ const PITCH_LIMIT = 0.18; // ~10 gradi
 const ROTATION_EASE = 0.13;
 const INITIAL_YAW = -0.25; // la posa su cui è tarato tutto il rig di luci
 
+/* Inerzia (solo telefono: la chiama js/navigation.js). Lasciando il dito in
+   corsa il modello continua a girare e rallenta da solo; lo stesso slancio fa
+   il giro del triangolo. Il mouse su desktop non la usa mai.
+   SPIN_FRICTION: quanto slancio resta a ogni fotogramma (più alto = gira più
+   a lungo). SPIN_MAX: velocità massima, in pixel di dito al millisecondo. */
+const SPIN_FRICTION = 0.94;
+const SPIN_MAX = 3;
+const FRAME_MS = 1000 / 60;
+
 /* Inquadratura.
 
    SE IL MODELLO TI SEMBRA TROPPO GRANDE O TROPPO PICCOLO, CAMBIA
@@ -231,6 +240,8 @@ export function createScene(container, { loadingEl, errorEl } = {}) {
   let targetPitch = 0;
   let currentYaw = INITIAL_YAW;
   let currentPitch = 0;
+  let spinVelocity = 0; // radianti al millisecondo, solo telefono
+  let lastSpinAt = 0;
 
   let targetCenterX = null; // in pixel, dal bordo sinistro del contenitore
   let currentCenterX = null;
@@ -800,6 +811,18 @@ export function createScene(container, { loadingEl, errorEl } = {}) {
     needsRender = true;
   }
 
+  function startSpin(radiansPerMs) {
+    if (reducedMotion) return;
+    spinVelocity = radiansPerMs;
+    lastSpinAt = 0;
+    needsRender = true;
+  }
+
+  function stopSpin() {
+    spinVelocity = 0;
+    lastSpinAt = 0;
+  }
+
   function onVisibilityChange() {
     if (document.visibilityState === 'visible') {
       needsRender = true;
@@ -831,6 +854,18 @@ export function createScene(container, { loadingEl, errorEl } = {}) {
     }
 
     let moving = false;
+
+    /* Inerzia: lo slancio sposta la rotazione voluta e si esaurisce da solo.
+       Misurato sul tempo, non sui fotogrammi: a 60 e a 120 Hz gira uguale. */
+    if (spinVelocity) {
+      const now = performance.now();
+      const dt = lastSpinAt ? Math.min(64, now - lastSpinAt) : FRAME_MS;
+      lastSpinAt = now;
+      targetYaw += spinVelocity * dt;
+      spinVelocity *= Math.pow(SPIN_FRICTION, dt / FRAME_MS);
+      if (Math.abs(spinVelocity) < 1e-5) stopSpin();
+      moving = true;
+    }
 
     if (model) {
       if (reducedMotion) {
@@ -928,6 +963,9 @@ export function createScene(container, { loadingEl, errorEl } = {}) {
     return {
       setCenterX() {},
       applyPointerDelta() {},
+      fling() {},
+      spin() {},
+      stopSpin() {},
       projectedHalfWidth: () => 0,
       onReady() {},
       dispose() {},
@@ -957,6 +995,22 @@ export function createScene(container, { loadingEl, errorEl } = {}) {
     /* Rotazione da un gesto touch: la passa js/navigation.js quando il dito
        non sta già servendo a navigare o a scorrere. */
     applyPointerDelta,
+
+    /* Il dito lascia il modello in corsa: `vx` è la sua velocità orizzontale
+       in pixel al millisecondo, e il modello prosegue per inerzia. */
+    fling(vx) {
+      const v = THREE.MathUtils.clamp(vx, -SPIN_MAX, SPIN_MAX);
+      startSpin(v * YAW_PER_PIXEL);
+    },
+
+    /* Un giro di `radians` fatto con lo stesso slancio che si esaurisce:
+       parte deciso e si posa. Il percorso totale è v / (1 - SPIN_FRICTION). */
+    spin(radians) {
+      startSpin((radians * (1 - SPIN_FRICTION)) / FRAME_MS);
+    },
+
+    // Il dito che si riappoggia afferra il modello e ferma l'inerzia.
+    stopSpin,
 
     /* Mezza larghezza della sagoma in pixel, presa nella rotazione PEGGIORE —
        quella in cui il quadrato delle lastre si presenta di spigolo. Il sito

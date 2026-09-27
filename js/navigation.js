@@ -59,10 +59,15 @@ const SWIPE_AXIS_BIAS = 1.3;
 
 /* ROTAZIONE COL DITO — un filo più reattiva ai gesti veloci.
    Il guadagno cresce con la velocità del dito e si ferma a +60%: un gesto
-   lento resta preciso come prima, uno veloce gira di più. Nessuna inerzia
-   che continua da sola: quando il dito si ferma, il modello si ferma. */
+   lento resta preciso come prima, uno veloce gira di più.
+   SOLO TELEFONO: la rotazione orizzontale è più ampia (MOBILE_SPIN_GAIN) e,
+   lasciando il dito in corsa, il modello prosegue per inerzia. Se il dito si
+   ferma prima di staccarsi (FLING_HOLD_MS), il modello si ferma con lui. */
 const TOUCH_FAST = 1.4; // px/ms: da qui in su il gesto è "veloce"
 const TOUCH_BOOST = 0.6; // guadagno massimo aggiunto
+const MOBILE_SPIN_GAIN = 1.35; // quanto gira in più sul telefono
+const FLING_HOLD_MS = 60; // dito fermo da più di così: niente inerzia
+const TOGGLE_SPIN = Math.PI * 2; // il giro del triangolo: uno completo
 
 function readDuration(name, fallback) {
   const raw = getComputedStyle(document.documentElement)
@@ -159,7 +164,12 @@ export function createNavigation({ scene, project = NO_PROJECT }) {
     });
   });
 
-  toggle.addEventListener('click', () => setPanel(panel === 0 ? 1 : panel - 1));
+  toggle.addEventListener('click', () => {
+    /* Telefono: il passaggio è accompagnato da un giro del modello. Nello
+       stesso verso dello swipe che farebbe lo stesso passaggio. */
+    if (mobile.matches) scene.spin(panel === 0 ? -TOGGLE_SPIN : TOGGLE_SPIN);
+    setPanel(panel === 0 ? 1 : panel - 1);
+  });
 
   // Appena la sagoma esiste davvero, il modello si riposiziona sapendo
   // quanto spazio occupa (vedi desktopCenterPx).
@@ -557,6 +567,8 @@ export function createNavigation({ scene, project = NO_PROJECT }) {
       touch = null;
       return;
     }
+    // Il dito che si appoggia afferra il modello: l'inerzia si ferma.
+    if (mobile.matches) scene.stopSpin();
     const t = event.touches[0];
     const pane = panes[index];
     touch = {
@@ -567,6 +579,7 @@ export function createNavigation({ scene, project = NO_PROJECT }) {
       lastTime: performance.now(),
       time: performance.now(),
       axis: null,
+      vx: 0, // velocità orizzontale della rotazione, per l'inerzia
       inField: isFormField(event.target),
       // Bordi al momento in cui il dito si appoggia: decidono se questo gesto
       // può cambiare scheda o pannello, o se deve solo scorrere il contenuto.
@@ -606,8 +619,11 @@ export function createNavigation({ scene, project = NO_PROJECT }) {
        mentre il dito sta soltanto scorrendo un testo — lì sta leggendo, e
        ridisegnare la scena a ogni fotogramma toglierebbe fluidità proprio
        allo scorrimento. La sua POSIZIONE la comanda una cosa sola per volta
-       (il trascinamento, o la galleria): qui si cambia solo la rotazione. */
-    const scrolling = touch.axis === 'y' && !dragY;
+       (il trascinamento, o la galleria): qui si cambia solo la rotazione.
+       Sul menu del telefono non c'è testo da leggere: lì il dito verticale
+       sfoglia le sezioni, e il modello gira anche allora. */
+    const onMenu = mobile.matches && panel === 0;
+    const scrolling = touch.axis === 'y' && !dragY && !onMenu;
     if (!touch.inField && !scrolling) {
       const now = performance.now();
       const stepX = t.clientX - touch.lastX;
@@ -616,7 +632,10 @@ export function createNavigation({ scene, project = NO_PROJECT }) {
       // Più il dito corre, più il modello gira: il guadagno si ferma a +60%.
       const speed = Math.hypot(stepX, stepY) / dt;
       const gain = 1 + Math.min(speed / TOUCH_FAST, 1) * TOUCH_BOOST;
-      scene.applyPointerDelta(stepX * gain, stepY * gain);
+      const spinX = mobile.matches ? stepX * gain * MOBILE_SPIN_GAIN : stepX * gain;
+      scene.applyPointerDelta(spinX, stepY * gain);
+      // Velocità ammorbidita: un singolo evento irregolare non decide il lancio.
+      touch.vx = touch.vx * 0.3 + (spinX / dt) * 0.7;
       touch.lastTime = now;
     }
 
@@ -625,6 +644,17 @@ export function createNavigation({ scene, project = NO_PROJECT }) {
   }
 
   function onTouchEnd() {
+    /* Inerzia (solo telefono): se il dito si stacca ancora in corsa, il
+       modello prosegue la rotazione e rallenta da solo. */
+    if (
+      mobile.matches &&
+      touch &&
+      touch.vx &&
+      performance.now() - touch.lastTime < FLING_HOLD_MS
+    ) {
+      scene.fling(touch.vx);
+    }
+
     if (drag) {
       endDrag();
       touch = null;
