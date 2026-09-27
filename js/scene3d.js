@@ -46,7 +46,7 @@ const INITIAL_YAW = -0.25; // la posa su cui è tarato tutto il rig di luci
    il giro del triangolo. Il mouse su desktop non la usa mai.
    SPIN_FRICTION: quanto slancio resta a ogni fotogramma (più alto = gira più
    a lungo). SPIN_MAX: velocità massima, in pixel di dito al millisecondo. */
-const SPIN_FRICTION = 0.94;
+const SPIN_FRICTION = 0.90;
 const SPIN_MAX = 3;
 const FRAME_MS = 1000 / 60;
 
